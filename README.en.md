@@ -35,12 +35,22 @@
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### One-Click Deploy
+
+Click the button below to deploy to Netlify with one click:
+
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/syferie/duckmail)
+
+> 🎉 **Zero Configuration Deployment** - After clicking the button, Netlify will automatically fork the project to your GitHub account and start deployment, no additional configuration required!
+
+### Local Development
+
+#### Prerequisites
 
 - Node.js 18+
 - npm or pnpm
 
-### Installation
+#### Installation
 
 ```bash
 # Clone the repository
@@ -85,6 +95,10 @@ pnpm start
 - **API**: Mail.tm REST API
 - **Real-time Communication**: Mercure SSE
 - **Language**: TypeScript
+
+## 🌐 Deployment Guide
+
+> ⚠️ **Note**: Vercel deployment is not supported as Mail.tm blocks Vercel's IP addresses. Netlify is recommended.
 
 ## 📧 API Documentation
 

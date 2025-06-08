@@ -35,12 +35,22 @@
 
 ## 🚀 快速开始
 
-### 环境要求
+### 一键部署
 
-- Node.js 18+ 
+点击下面的按钮，一键部署到 Netlify：
+
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/syferie/duckmail)
+
+> 🎉 **零配置部署** - 点击按钮后，Netlify 会自动 fork 项目到你的 GitHub 账户并开始部署，无需任何额外配置！
+
+### 本地开发
+
+#### 环境要求
+
+- Node.js 18+
 - npm 或 pnpm
 
-### 安装
+#### 安装
 
 ```bash
 # 克隆项目
@@ -85,6 +95,10 @@ pnpm start
 - **API**: Mail.tm REST API
 - **实时通信**: Mercure SSE
 - **语言**: TypeScript
+
+## 🌐 部署说明
+
+> ⚠️ **注意**: 由于 Mail.tm 屏蔽了 Vercel 的 IP，无法使用 Vercel 部署，推荐使用 Netlify。
 
 ## 📧 API 说明
 
