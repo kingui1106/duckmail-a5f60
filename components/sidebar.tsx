@@ -8,9 +8,10 @@ interface SidebarProps {
   activeItem: string
   onItemClick: (item: string) => void
   currentLocale: string
+  isMobile?: boolean
 }
 
-export default function Sidebar({ activeItem, onItemClick, currentLocale }: SidebarProps) {
+export default function Sidebar({ activeItem, onItemClick, currentLocale, isMobile = false }: SidebarProps) {
   const menuItems = [
     {
       id: "inbox",
@@ -48,19 +49,21 @@ export default function Sidebar({ activeItem, onItemClick, currentLocale }: Side
   ]
 
   return (
-    <Card className="w-64 h-screen rounded-none border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col">
-      <div className="p-4 border-b border-gray-200 dark:border-gray-800">
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden">
-            <img
-              src="https://img.116119.xyz/img/2025/06/08/547d9cd9739b8e15a51e510342af3fb0.png"
-              alt="DuckMail Logo"
-              className="w-full h-full object-contain"
-            />
+    <Card className={`w-64 ${isMobile ? 'h-full' : 'h-screen'} rounded-none ${isMobile ? '' : 'border-r'} border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col`}>
+      {!isMobile && (
+        <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden">
+              <img
+                src="https://img.116119.xyz/img/2025/06/08/547d9cd9739b8e15a51e510342af3fb0.png"
+                alt="DuckMail Logo"
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <span className="font-semibold text-lg text-gray-800 dark:text-white">duckmail.cv</span>
           </div>
-          <span className="font-semibold text-lg text-gray-800 dark:text-white">duckmail.cv</span>
         </div>
-      </div>
+      )}
 
       <div className="p-4 space-y-3 flex-grow">
         {menuItems.map((item) => {

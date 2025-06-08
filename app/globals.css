@@ -24,6 +24,30 @@ a {
   text-decoration: none;
 }
 
+/* 移动端优化 */
+@media (max-width: 768px) {
+  /* 防止移动端缩放 */
+  html {
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+  }
+
+  /* 优化触摸体验 */
+  button, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 优化滚动 */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 优化输入框 */
+  input, textarea {
+    font-size: 16px; /* 防止iOS缩放 */
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   html {
     color-scheme: dark;

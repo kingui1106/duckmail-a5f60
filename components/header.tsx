@@ -17,9 +17,10 @@ interface HeaderProps {
   currentLocale: string
   onLocaleChange: (locale: string) => void
   onLogin?: () => void
+  isMobile?: boolean
 }
 
-export default function Header({ onCreateAccount, currentLocale, onLocaleChange, onLogin }: HeaderProps) {
+export default function Header({ onCreateAccount, currentLocale, onLocaleChange, onLogin, isMobile = false }: HeaderProps) {
   const { theme, setTheme } = useTheme()
   const { isAuthenticated, currentAccount, accounts, logout, switchAccount, deleteAccount } = useAuth()
   const [mounted, setMounted] = useState(false)
@@ -104,15 +105,15 @@ export default function Header({ onCreateAccount, currentLocale, onLocaleChange,
   }
 
   return (
-    <header className="h-16 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-6 flex items-center justify-between">
-      <div className="flex items-center space-x-4">
+    <header className={`h-16 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 ${isMobile ? 'px-4' : 'px-6'} flex items-center justify-between`}>
+      <div className="flex items-center space-x-2 flex-1 min-w-0">
         {isAuthenticated && currentAccount ? (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="light"
-                  className="text-sm font-medium text-gray-800 dark:text-white p-2 h-auto bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600"
+                  className={`text-sm font-medium text-gray-800 dark:text-white p-2 h-auto bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 ${isMobile ? 'max-w-[200px] truncate' : ''}`}
                   onPress={() => handleCopyToClipboard(currentAccount.address, "email")}
                   endContent={
                     copiedEmail ? (
@@ -122,7 +123,7 @@ export default function Header({ onCreateAccount, currentLocale, onLocaleChange,
                     )
                   }
                 >
-                  {currentAccount.address}
+                  <span className={isMobile ? 'truncate' : ''}>{currentAccount.address}</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">
@@ -135,7 +136,7 @@ export default function Header({ onCreateAccount, currentLocale, onLocaleChange,
         )}
       </div>
 
-      <div className="flex items-center space-x-2">
+      <div className={`flex items-center ${isMobile ? 'space-x-1' : 'space-x-2'}`}>
         {/* 邮件检查切换按钮 */}
         {isAuthenticated && currentAccount && (
           <TooltipProvider>

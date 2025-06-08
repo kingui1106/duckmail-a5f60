@@ -14,7 +14,9 @@ import { AuthProvider, useAuth } from "@/contexts/auth-context"
 import { MailStatusProvider } from "@/contexts/mail-status-context"
 import type { Message } from "@/types"
 import { useHeroUIToast } from "@/hooks/use-heroui-toast"
-import { Languages, CheckCircle, Navigation, RefreshCw } from "lucide-react"
+import { useIsMobile } from "@/hooks/use-mobile"
+import { Languages, CheckCircle, Navigation, RefreshCw, Menu } from "lucide-react"
+import { Button } from "@heroui/button"
 
 function MainContent() {
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false)
@@ -25,6 +27,8 @@ function MainContent() {
   const [currentLocale, setCurrentLocale] = useState("zh")
   const [refreshKey, setRefreshKey] = useState(0)
   const { toast } = useHeroUIToast()
+  const isMobile = useIsMobile()
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   // 检测浏览器语言并设置默认语言
   useEffect(() => {
@@ -142,14 +146,45 @@ function MainContent() {
   return (
     <>
       <div className="flex h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100">
-        <Sidebar activeItem="inbox" onItemClick={handleSidebarItemClick} currentLocale={currentLocale} />
+        {/* 桌面端侧边栏 */}
+        {!isMobile && (
+          <Sidebar activeItem="inbox" onItemClick={handleSidebarItemClick} currentLocale={currentLocale} />
+        )}
 
         <div className="flex-1 flex flex-col overflow-hidden">
+          {/* 移动端顶部栏包含菜单按钮 */}
+          {isMobile && (
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+              <Button
+                isIconOnly
+                variant="light"
+                size="sm"
+                onPress={() => setIsSidebarOpen(true)}
+                className="text-gray-600 dark:text-gray-300"
+                aria-label="打开菜单"
+              >
+                <Menu size={20} />
+              </Button>
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 rounded-lg flex items-center justify-center overflow-hidden">
+                  <img
+                    src="https://img.116119.xyz/img/2025/06/08/547d9cd9739b8e15a51e510342af3fb0.png"
+                    alt="DuckMail Logo"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <span className="font-semibold text-lg text-gray-800 dark:text-white">duckmail.cv</span>
+              </div>
+              <div className="w-8" /> {/* 占位符保持居中 */}
+            </div>
+          )}
+
           <Header
             onCreateAccount={handleCreateAccount}
             onLogin={handleLogin}
             currentLocale={currentLocale}
             onLocaleChange={handleLocaleChange}
+            isMobile={isMobile}
           />
           <main className="flex-1 overflow-y-auto">
             <div className="h-full flex flex-col">
@@ -172,6 +207,50 @@ function MainContent() {
             </div>
           </main>
         </div>
+
+        {/* 移动端侧边栏抽屉 */}
+        {isMobile && isSidebarOpen && (
+          <div className="fixed inset-0 z-50">
+            <div
+              className="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300"
+              onClick={() => setIsSidebarOpen(false)}
+            />
+            <div className={`absolute left-0 top-0 h-full w-64 bg-white dark:bg-gray-900 shadow-lg transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+              <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center overflow-hidden">
+                      <img
+                        src="https://img.116119.xyz/img/2025/06/08/547d9cd9739b8e15a51e510342af3fb0.png"
+                        alt="DuckMail Logo"
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    <span className="font-semibold text-lg text-gray-800 dark:text-white">duckmail.cv</span>
+                  </div>
+                  <Button
+                    isIconOnly
+                    variant="light"
+                    size="sm"
+                    onPress={() => setIsSidebarOpen(false)}
+                    className="text-gray-600 dark:text-gray-300"
+                  >
+                    ×
+                  </Button>
+                </div>
+              </div>
+              <Sidebar
+                activeItem="inbox"
+                onItemClick={(item) => {
+                  handleSidebarItemClick(item)
+                  setIsSidebarOpen(false)
+                }}
+                currentLocale={currentLocale}
+                isMobile={true}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       <AccountModal isOpen={isAccountModalOpen} onClose={handleCloseModal} currentLocale={currentLocale} />

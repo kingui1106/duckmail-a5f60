@@ -17,7 +17,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       >
         {children}
         <ToastProvider
-          placement="bottom-right"
+          placement="bottom-center"
           maxVisibleToasts={3}
           toastProps={{
             color: "primary",
