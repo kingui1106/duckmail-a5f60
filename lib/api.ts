@@ -16,7 +16,15 @@ function getErrorMessage(status: number, errorData: any): string {
     case 418:
       return "服务器暂时不可用"
     case 422:
-      return errorData?.message || "请求数据格式错误，请检查用户名长度或域名格式"
+      // 处理具体的422错误信息
+      if (errorData?.violations && Array.isArray(errorData.violations)) {
+        const violation = errorData.violations[0]
+        if (violation?.propertyPath === "address" && violation?.message?.includes("already used")) {
+          return "该邮箱地址已被使用，请尝试其他用户名"
+        }
+        return violation?.message || "请求数据格式错误"
+      }
+      return errorData?.detail || errorData?.message || "请求数据格式错误，请检查用户名长度或域名格式"
     case 429:
       return "请求过于频繁，请稍后再试"
     default:
@@ -24,20 +32,33 @@ function getErrorMessage(status: number, errorData: any): string {
   }
 }
 
-// 重试函数，改进对429错误的处理
+// 检查是否应该重试的错误
+function shouldRetry(status: number): boolean {
+  // 不应该重试的状态码
+  const noRetryStatuses = [400, 401, 403, 404, 405, 422, 429]
+  return !noRetryStatuses.includes(status)
+}
+
+// 重试函数，改进错误处理
 async function retryFetch(fn: () => Promise<any>, retries = 3, delay = 1000): Promise<any> {
   try {
     const response = await fn()
-
-    // 检查是否是Response对象且有429状态码
-    if (response && typeof response.status === 'number' && response.status === 429 && retries > 0) {
-      console.log(`Rate limited, retrying... ${retries} attempts left`)
-      await new Promise((resolve) => setTimeout(resolve, delay))
-      return retryFetch(fn, retries - 1, delay)
+    return response
+  } catch (error: any) {
+    // 如果错误包含状态码信息，检查是否应该重试
+    if (error.message && typeof error.message === 'string') {
+      // 从错误消息中提取状态码
+      const statusMatch = error.message.match(/HTTP (\d+)/)
+      if (statusMatch) {
+        const status = parseInt(statusMatch[1])
+        if (!shouldRetry(status)) {
+          console.log(`Status ${status} should not be retried, throwing error immediately`)
+          throw error
+        }
+      }
     }
 
-    return response
-  } catch (error) {
+    // 对于其他错误，如果还有重试次数，则重试
     if (retries > 0) {
       console.log(`Retrying... ${retries} attempts left`)
       await new Promise((resolve) => setTimeout(resolve, delay))
@@ -79,7 +100,7 @@ export async function fetchDomains(): Promise<Domain[]> {
 }
 
 export async function createAccount(address: string, password: string): Promise<Account> {
-  const response = await retryFetch(async () => {
+  try {
     const res = await fetch(`${API_BASE_URL}?endpoint=/accounts`, {
       method: "POST",
       headers: {
@@ -90,13 +111,44 @@ export async function createAccount(address: string, password: string): Promise<
 
     if (!res.ok) {
       const error = await res.json().catch(() => ({}))
-      throw new Error(getErrorMessage(res.status, error))
+      const errorMessage = getErrorMessage(res.status, error)
+
+      // 对于422和429错误，直接抛出，不重试
+      if (res.status === 422 || res.status === 429) {
+        throw new Error(errorMessage)
+      }
+
+      // 对于其他错误，可以考虑重试
+      throw new Error(`HTTP ${res.status}: ${errorMessage}`)
     }
 
-    return res
-  })
+    return res.json()
+  } catch (error: any) {
+    // 如果是422或429错误，直接抛出
+    if (error.message && (error.message.includes("该邮箱地址已被使用") || error.message.includes("请求过于频繁"))) {
+      throw error
+    }
 
-  return response.json()
+    // 对于其他错误，使用重试逻辑
+    const response = await retryFetch(async () => {
+      const res = await fetch(`${API_BASE_URL}?endpoint=/accounts`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ address, password }),
+      })
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}))
+        throw new Error(`HTTP ${res.status}: ${getErrorMessage(res.status, error)}`)
+      }
+
+      return res
+    }, 2, 2000) // 减少重试次数和增加延迟
+
+    return response.json()
+  }
 }
 
 export async function getToken(address: string, password: string): Promise<{ token: string; id: string }> {

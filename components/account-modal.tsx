@@ -27,6 +27,7 @@ export default function AccountModal({ isOpen, onClose, currentLocale }: Account
   const [isLoadingDomains, setIsLoadingDomains] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
+  const [showLoginOption, setShowLoginOption] = useState(false)
   const { register, login } = useAuth()
 
   const getDomains = async () => {
@@ -66,6 +67,7 @@ export default function AccountModal({ isOpen, onClose, currentLocale }: Account
 
     setIsLoading(true)
     setError(null)
+    setShowLoginOption(false)
 
     const email = `${username}@${selectedDomain}`
 
@@ -76,25 +78,64 @@ export default function AccountModal({ isOpen, onClose, currentLocale }: Account
       setUsername("")
       setPassword("")
       setError(null)
+      setShowLoginOption(false)
     } catch (error: any) {
       console.error("Registration failed:", error)
 
-      // 如果是账户已存在的错误，尝试登录
-      if (error.message && (error.message.includes("already exists") || error.message.includes("422"))) {
-        try {
-          await login(email, password)
-          onClose()
-          // 重置表单
-          setUsername("")
-          setPassword("")
-          setError(null)
-          return
-        } catch (loginError: any) {
-          setError(currentLocale === "en" ? "Login failed: password may be incorrect" : "登录失败：密码可能不正确")
-        }
+      // 根据错误类型提供不同的处理
+      if (error.message && error.message.includes("该邮箱地址已被使用")) {
+        // 邮箱已存在，提示用户可以尝试登录
+        setError(
+          currentLocale === "en"
+            ? "This email address is already in use. If this is your account, you can try logging in."
+            : "该邮箱地址已被使用。如果这是您的账户，您可以尝试登录。"
+        )
+        setShowLoginOption(true)
+      } else if (error.message && error.message.includes("请求过于频繁")) {
+        // 请求过于频繁
+        setError(
+          currentLocale === "en"
+            ? "Too many requests. Please wait a moment and try again."
+            : "请求过于频繁，请稍等片刻后再试。"
+        )
+        setShowLoginOption(false)
       } else {
+        // 其他错误
         setError(error.message || (currentLocale === "en" ? "Failed to create account, please try again later" : "创建账户失败，请稍后再试"))
+        setShowLoginOption(false)
       }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleTryLogin = async () => {
+    if (!username || !selectedDomain || !password) {
+      return
+    }
+
+    setIsLoading(true)
+    setError(null)
+    setShowLoginOption(false)
+
+    const email = `${username}@${selectedDomain}`
+
+    try {
+      await login(email, password)
+      onClose()
+      // 重置表单
+      setUsername("")
+      setPassword("")
+      setError(null)
+      setShowLoginOption(false)
+    } catch (error: any) {
+      console.error("Login failed:", error)
+      setError(
+        currentLocale === "en"
+          ? "Login failed. Please check your password or try creating a new account with a different username."
+          : "登录失败。请检查您的密码或尝试使用不同的用户名创建新账户。"
+      )
+      setShowLoginOption(false)
     } finally {
       setIsLoading(false)
     }
@@ -207,18 +248,31 @@ export default function AccountModal({ isOpen, onClose, currentLocale }: Account
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-sm text-red-600">{error}</p>
-                {error.includes("网络") && (
-                  <Button
-                    size="sm"
-                    variant="light"
-                    color="primary"
-                    className="mt-2"
-                    onPress={getDomains}
-                    startContent={<RefreshCw size={14} />}
-                  >
-                    {currentLocale === "en" ? "Retry Get Domains" : "重试获取域名"}
-                  </Button>
-                )}
+                <div className="flex gap-2 mt-2">
+                  {error.includes("网络") && (
+                    <Button
+                      size="sm"
+                      variant="light"
+                      color="primary"
+                      onPress={getDomains}
+                      startContent={<RefreshCw size={14} />}
+                    >
+                      {currentLocale === "en" ? "Retry Get Domains" : "重试获取域名"}
+                    </Button>
+                  )}
+                  {showLoginOption && (
+                    <Button
+                      size="sm"
+                      variant="light"
+                      color="primary"
+                      onPress={handleTryLogin}
+                      isLoading={isLoading}
+                      startContent={<User size={14} />}
+                    >
+                      {currentLocale === "en" ? "Try Login" : "尝试登录"}
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
           </div>
