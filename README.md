@@ -40,11 +40,23 @@
 
 ### 一键部署
 
+#### Netlify 部署（推荐）
+
 点击下面的按钮，一键部署到 Netlify：
 
 [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/syferie/duckmail)
 
 > 🎉 **零配置部署** - 点击按钮后，Netlify 会自动 fork 项目到你的 GitHub 账户并开始部署，无需任何额外配置！
+
+#### Vercel 部署
+
+点击下面的按钮，一键部署到 Vercel：
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/syferie/duckmail)
+
+> ⚠️ **注意**：Vercel 部署仅支持 DuckMail API，不支持 Mail.tm API（因为 Mail.tm 屏蔽了 Vercel 的 IP 地址）。部署后请在设置中禁用 Mail.tm 提供商。
+>
+> 📁 **配置文件**：项目已包含 `vercel.json` 配置文件，确保正确的 Next.js 部署设置。
 
 ### 本地开发
 
@@ -101,7 +113,20 @@ pnpm start
 
 ## 🌐 部署说明
 
-> ⚠️ **注意**: 由于 Mail.tm 屏蔽了 Vercel 的 IP，无法使用 Vercel 部署，推荐使用 Netlify。
+### 平台兼容性
+
+| 部署平台 | DuckMail API | Mail.tm API | 推荐度 |
+|---------|-------------|-------------|--------|
+| **Netlify** | ✅ 支持 | ✅ 支持 | ⭐⭐⭐⭐⭐ |
+| **Vercel** | ✅ 支持 | ❌ 不支持* | ⭐⭐⭐⭐ |
+| **其他平台** | ✅ 支持 | ✅ 支持 | ⭐⭐⭐ |
+
+> *Mail.tm 屏蔽了 Vercel 的 IP 地址，因此 Vercel 部署无法使用 Mail.tm API。
+
+### 部署建议
+
+- **完整功能**：推荐使用 **Netlify**，支持所有 API 提供商
+- **快速部署**：可以使用 **Vercel**，但需要在设置中禁用 Mail.tm 提供商
 
 ## 📧 API 说明
 

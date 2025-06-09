@@ -43,11 +43,23 @@
 
 ### One-Click Deploy
 
+#### Netlify Deploy (Recommended)
+
 Click the button below to deploy to Netlify with one click:
 
 [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/syferie/duckmail)
 
 > 🎉 **Zero Configuration Deployment** - After clicking the button, Netlify will automatically fork the project to your GitHub account and start deployment, no additional configuration required!
+
+#### Vercel Deploy
+
+Click the button below to deploy to Vercel with one click:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/syferie/duckmail)
+
+> ⚠️ **Note**: Vercel deployment only supports DuckMail API, not Mail.tm API (because Mail.tm blocks Vercel's IP addresses). Please disable the Mail.tm provider in settings after deployment.
+>
+> 📁 **Configuration**: The project includes `vercel.json` configuration file to ensure proper Next.js deployment settings.
 
 ### Local Development
 
@@ -104,7 +116,20 @@ pnpm start
 
 ## 🌐 Deployment Guide
 
-> ⚠️ **Note**: Vercel deployment is not supported as Mail.tm blocks Vercel's IP addresses. Netlify is recommended.
+### Platform Compatibility
+
+| Platform | DuckMail API | Mail.tm API | Rating |
+|----------|-------------|-------------|--------|
+| **Netlify** | ✅ Supported | ✅ Supported | ⭐⭐⭐⭐⭐ |
+| **Vercel** | ✅ Supported | ❌ Not Supported* | ⭐⭐⭐⭐ |
+| **Other Platforms** | ✅ Supported | ✅ Supported | ⭐⭐⭐ |
+
+> *Mail.tm blocks Vercel's IP addresses, so Vercel deployment cannot use Mail.tm API.
+
+### Deployment Recommendations
+
+- **Full Features**: Recommended to use **Netlify**, supports all API providers
+- **Quick Deploy**: Can use **Vercel**, but need to disable Mail.tm provider in settings
 
 ## 📧 API Documentation
 
