@@ -4,13 +4,14 @@ import { Button } from "@heroui/button"
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSection } from "@heroui/dropdown"
 import { Avatar } from "@heroui/avatar"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Sun, Moon, Languages, User, UserPlus, LogOut, Trash2, Copy, Check, Wifi } from "lucide-react"
+import { Sun, Moon, Languages, User, UserPlus, LogOut, Trash2, Copy, Check, Wifi, Settings } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useHeroUIToast } from "@/hooks/use-heroui-toast"
 import { useMailStatus } from "@/contexts/mail-status-context"
 import { useSmartMailChecker } from "@/hooks/use-smart-mail-checker"
+import { SettingsPanel } from "@/components/settings-panel"
 
 interface HeaderProps {
   onCreateAccount: () => void
@@ -25,6 +26,7 @@ export default function Header({ onCreateAccount, currentLocale, onLocaleChange,
   const { isAuthenticated, currentAccount, accounts, logout, switchAccount, deleteAccount } = useAuth()
   const [mounted, setMounted] = useState(false)
   const [copiedEmail, setCopiedEmail] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const { toast } = useHeroUIToast()
   const { isEnabled, setIsEnabled } = useMailStatus()
 
@@ -234,6 +236,17 @@ export default function Header({ onCreateAccount, currentLocale, onLocaleChange,
           <Languages size={18} />
         </Button>
 
+        <Button
+          isIconOnly
+          variant="light"
+          size="sm"
+          onPress={() => setIsSettingsOpen(true)}
+          className="text-gray-600 dark:text-gray-300"
+          aria-label={currentLocale === "en" ? "Settings" : "设置"}
+        >
+          <Settings size={18} />
+        </Button>
+
         <Dropdown placement="bottom-end">
           <DropdownTrigger>
             <Button isIconOnly variant="light" size="sm" className="text-gray-600 dark:text-gray-300">
@@ -274,38 +287,76 @@ export default function Header({ onCreateAccount, currentLocale, onLocaleChange,
 
               ...(isAuthenticated && accounts.length > 1 ? [
                 <DropdownSection key="switch-accounts" title={currentLocale === "en" ? "Switch Account" : "切换账户"} showDivider>
-                  {accounts
-                    .filter((account) => account.address !== currentAccount?.address)
-                    .map((account) => (
-                      <DropdownItem
-                        key={account.id}
-                        startContent={
-                          <Avatar
-                            name={getInitials(account.address)}
-                            color={getRandomColor(account.address) as any}
-                            size="sm"
-                          />
-                        }
-                        onPress={async () => {
-                          try {
-                            await switchAccount(account)
-                          } catch (error) {
-                            toast({
-                              title: currentLocale === "en" ? "Account Switch Failed" : "切换账户失败",
-                              description: currentLocale === "en" ? "Please try logging in to this account again" : "请尝试重新登录该账户",
-                              color: "danger",
-                              variant: "flat"
-                            })
-                          }
-                        }}
-                        textValue={account.address}
-                        className="py-2"
-                      >
-                        <div className="text-gray-800 dark:text-white text-sm">
-                          {account.address}
-                        </div>
-                      </DropdownItem>
-                    ))}
+                  {(() => {
+                    // 按提供商分组账户
+                    const accountsByProvider = accounts.reduce((acc, account) => {
+                      const providerId = account.providerId || "duckmail"
+                      if (!acc[providerId]) {
+                        acc[providerId] = []
+                      }
+                      acc[providerId].push(account)
+                      return acc
+                    }, {} as Record<string, typeof accounts>)
+
+                    // 获取提供商名称
+                    const getProviderName = (providerId: string) => {
+                      switch (providerId) {
+                        case "duckmail": return "DuckMail"
+                        case "mailtm": return "Mail.tm"
+                        default: return providerId
+                      }
+                    }
+
+                    return Object.entries(accountsByProvider).flatMap(([providerId, providerAccounts]) => [
+                      // 如果有多个提供商，显示提供商分组标题
+                      ...(Object.keys(accountsByProvider).length > 1 ? [
+                        <DropdownItem key={`provider-${providerId}`} className="opacity-60 cursor-default pointer-events-none">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${
+                              providerId === 'duckmail' ? 'bg-blue-500' :
+                              providerId === 'mailtm' ? 'bg-green-500' : 'bg-purple-500'
+                            }`} />
+                            <span className="text-xs font-medium text-gray-600">
+                              {getProviderName(providerId)}
+                            </span>
+                          </div>
+                        </DropdownItem>
+                      ] : []),
+                      // 该提供商的账户
+                      ...providerAccounts
+                        .filter((account) => account.address !== currentAccount?.address)
+                        .map((account) => (
+                          <DropdownItem
+                            key={account.id}
+                            startContent={
+                              <Avatar
+                                name={getInitials(account.address)}
+                                color={getRandomColor(account.address) as any}
+                                size="sm"
+                              />
+                            }
+                            onPress={async () => {
+                              try {
+                                await switchAccount(account)
+                              } catch (error) {
+                                toast({
+                                  title: currentLocale === "en" ? "Account Switch Failed" : "切换账户失败",
+                                  description: currentLocale === "en" ? "Please try logging in to this account again" : "请尝试重新登录该账户",
+                                  color: "danger",
+                                  variant: "flat"
+                                })
+                              }
+                            }}
+                            textValue={account.address}
+                            className={`py-2 ${Object.keys(accountsByProvider).length > 1 ? "pl-6" : ""}`}
+                          >
+                            <div className="text-gray-800 dark:text-white text-sm">
+                              {account.address}
+                            </div>
+                          </DropdownItem>
+                        ))
+                    ])
+                  })()}
                 </DropdownSection>
               ] : []),
 
@@ -356,6 +407,12 @@ export default function Header({ onCreateAccount, currentLocale, onLocaleChange,
           </Button>
         )}
       </div>
+
+      <SettingsPanel
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        currentLocale={currentLocale}
+      />
     </header>
   )
 }

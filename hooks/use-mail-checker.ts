@@ -78,7 +78,8 @@ export function useMailChecker({
       isCheckingRef.current = true
 
       try {
-        const { messages } = await getMessages(token)
+        const providerId = currentAccount?.providerId || "duckmail"
+        const { messages } = await getMessages(token, 1, providerId)
         const currentMessages = messages || []
         console.log(`📧 [MailChecker] API call completed - found ${currentMessages.length} messages`)
 

@@ -25,7 +25,7 @@ export default function MessageDetail({ message, onBack, onDelete }: MessageDeta
   const [messageDetail, setMessageDetail] = useState<MessageDetailType | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const { token } = useAuth()
+  const { token, currentAccount } = useAuth()
   const { toast } = useHeroUIToast()
   const [currentLocale, setCurrentLocale] = useState("en")
   const isMobile = useIsMobile()
@@ -47,11 +47,12 @@ export default function MessageDetail({ message, onBack, onDelete }: MessageDeta
 
       try {
         setLoading(true)
-        const detail = await getMessage(token, message.id)
+        const providerId = currentAccount?.providerId || "duckmail"
+        const detail = await getMessage(token, message.id, providerId)
         setMessageDetail(detail)
 
         if (!message.seen) {
-          await markMessageAsRead(token, message.id)
+          await markMessageAsRead(token, message.id, providerId)
           // Optionally update the message object in parent state to reflect 'seen: true'
         }
         setError(null)
@@ -72,7 +73,8 @@ export default function MessageDetail({ message, onBack, onDelete }: MessageDeta
     if (!token || !messageDetail) return
 
     try {
-      await apiDeleteMessage(token, messageDetail.id) // Use renamed import
+      const providerId = currentAccount?.providerId || "duckmail"
+      await apiDeleteMessage(token, messageDetail.id, providerId) // Use renamed import
       toast({
         title: currentLocale === "en" ? "Message Deleted" : "邮件已删除",
         color: "success",

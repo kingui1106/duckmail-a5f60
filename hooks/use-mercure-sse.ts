@@ -31,14 +31,39 @@ export function useMercureSSE({
       return
     }
 
+    // 获取当前账户的提供商配置
+    const providerId = currentAccount.providerId || "duckmail"
+
+    // 直接获取提供商配置，避免依赖外部函数
+    const presetProviders = [
+      {
+        id: "duckmail",
+        name: "DuckMail",
+        baseUrl: "https://api.duckmail.sbs",
+        mercureUrl: "https://mercure.duckmail.sbs/.well-known/mercure",
+      },
+      {
+        id: "mailtm",
+        name: "Mail.tm",
+        baseUrl: "https://api.mail.tm",
+        mercureUrl: "https://mercure.mail.tm/.well-known/mercure",
+      },
+    ]
+
+    const provider = presetProviders.find(p => p.id === providerId)
+    if (!provider) {
+      console.error("❌ [Mercure] Cannot find provider configuration for:", providerId)
+      return
+    }
+
     // 断开现有连接
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
     }
 
     try {
-      // 构建 Mercure URL - 根据官方文档
-      const mercureUrl = new URL("https://mercure.mail.tm/.well-known/mercure")
+      // 构建 Mercure URL - 使用当前账户的提供商配置
+      const mercureUrl = new URL(provider.mercureUrl)
       mercureUrl.searchParams.append("topic", `/accounts/${currentAccount.id}`)
 
       console.log("🔌 [Mercure] Connecting to:", mercureUrl.toString())
@@ -50,6 +75,8 @@ export function useMercureSSE({
       await fetchEventSource(mercureUrl.toString(), {
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Accept': 'text/event-stream',
+          'Cache-Control': 'no-cache',
         },
         signal: abortController.signal,
 
@@ -94,6 +121,14 @@ export function useMercureSSE({
         onerror: (error) => {
           console.error("❌ [Mercure] Connection error:", error)
           setIsConnected(false)
+
+          // 检查是否是CORS错误
+          if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+            console.error("❌ [Mercure] CORS error detected - check server configuration")
+            if (provider) {
+              console.error(`❌ [Mercure] Make sure ${new URL(provider.mercureUrl).hostname} allows cross-origin requests from your domain`)
+            }
+          }
 
           // 自动重连逻辑 - 更保守的重连策略
           if (reconnectAttempts.current < 2) { // 只重试2次
@@ -163,10 +198,18 @@ export function useMercureSSE({
     return () => {
       if (connectTimeoutRef.current) {
         clearTimeout(connectTimeoutRef.current)
+        connectTimeoutRef.current = null
       }
+      // 只在组件卸载时断开连接，不在依赖项变化时断开
+    }
+  }, [enabled, currentAccount?.id, currentAccount?.providerId, token]) // 只监听关键值的变化，不包含函数
+
+  // 组件卸载时清理
+  useEffect(() => {
+    return () => {
       disconnect()
     }
-  }, [enabled, currentAccount?.id, token]) // 只监听关键值的变化
+  }, [])
 
   return {
     connect,

@@ -18,7 +18,7 @@ export function useSmartMailChecker({
   onMessagesUpdate,
   enabled = true, // 这个参数只控制轮询策略，不影响 Mercure
 }: UseSmartMailCheckerOptions = {}) {
-  const { token } = useAuth()
+  const { token, currentAccount } = useAuth()
   const lastUsedRef = useRef<number>(0)
   const isRefreshingRef = useRef(false)
   const [mercureConnected, setMercureConnected] = useState(false)
@@ -33,7 +33,8 @@ export function useSmartMailChecker({
     isRefreshingRef.current = true
     try {
       // 获取最新的消息列表
-      const { messages } = await getMessages(token)
+      const providerId = currentAccount?.providerId || "duckmail"
+      const { messages } = await getMessages(token, 1, providerId)
       const currentMessages = messages || []
 
       // 更新消息列表

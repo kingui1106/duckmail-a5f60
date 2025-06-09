@@ -1,13 +1,20 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-const MAIL_TM_API = "https://api.mail.tm"
+// 默认API提供商（向后兼容）
+const DEFAULT_API_BASE_URL = "https://api.duckmail.sbs"
+
+// 从请求头获取API提供商的基础URL
+function getApiBaseUrl(request: NextRequest): string {
+  const providerBaseUrl = request.headers.get("X-API-Provider-Base-URL")
+  return providerBaseUrl || DEFAULT_API_BASE_URL
+}
 
 async function handleRequest(
   originalRequest: NextRequest,
   endpoint: string,
   options: RequestInit,
-  isDomainRequest = false,
 ) {
+  const apiBaseUrl = getApiBaseUrl(originalRequest)
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), 15000) // 15秒超时
 
@@ -33,7 +40,7 @@ async function handleRequest(
   }
 
   console.log(
-    `Proxying request to: ${MAIL_TM_API}${endpoint}`,
+    `Proxying request to: ${apiBaseUrl}${endpoint}`,
     `Method: ${finalOptions.method || "GET"}`,
     `Headers: ${JSON.stringify(Object.fromEntries(requestHeaders.entries()))}`,
   )
@@ -42,7 +49,7 @@ async function handleRequest(
   }
 
   try {
-    const response = await fetch(`${MAIL_TM_API}${endpoint}`, finalOptions)
+    const response = await fetch(`${apiBaseUrl}${endpoint}`, finalOptions)
     clearTimeout(timeoutId)
 
     const responseContentType = response.headers.get("Content-Type") || "unknown"
@@ -53,7 +60,7 @@ async function handleRequest(
     if (!response.ok) {
       const errorBody = await response.text()
       console.error(
-        `DuckMail API Error for ${endpoint}: ${response.status} ${response.statusText}`,
+        `API Error for ${endpoint}: ${response.status} ${response.statusText}`,
         `Response body: ${errorBody}`,
       )
       return new Response(errorBody, {
@@ -108,7 +115,7 @@ async function handleRequest(
       console.error(`API request to ${endpoint} timed out:`, error.message)
       return NextResponse.json(
         {
-          error: `Failed to fetch from DuckMail API: Request to ${endpoint} timed out`,
+          error: `Failed to fetch from API: Request to ${endpoint} timed out`,
           details: error.message,
         },
         { status: 504 }, // Gateway Timeout
@@ -117,7 +124,7 @@ async function handleRequest(
     console.error(`API Proxy Error for ${endpoint}:`, error.message, error.stack)
     return NextResponse.json(
       {
-        error: `Failed to fetch from DuckMail API for ${endpoint}`,
+        error: `Failed to fetch from API for ${endpoint}`,
         details: error.message,
       },
       { status: 500 },
@@ -136,8 +143,7 @@ export async function GET(request: NextRequest) {
   }
   // User-Agent 和 Accept 会在 handleRequest 中设置
 
-  const isDomainRequest = endpoint === "/domains" || endpoint.startsWith("/domains?")
-  return handleRequest(request, endpoint, { headers: headersInit, method: "GET" }, isDomainRequest)
+  return handleRequest(request, endpoint, { headers: headersInit, method: "GET" })
 }
 
 export async function POST(request: NextRequest) {
@@ -206,6 +212,5 @@ export async function DELETE(request: NextRequest) {
   }
   // User-Agent 和 Accept 会在 handleRequest 中设置
 
-  // DELETE 请求的 handleRequest 调用不需要第三个参数 isDomainRequest
   return handleRequest(request, endpoint, { method: "DELETE", headers: headersInit })
 }

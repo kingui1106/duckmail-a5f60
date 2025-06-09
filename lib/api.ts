@@ -2,6 +2,138 @@ import type { Account, Domain, Message, MessageDetail } from "@/types"
 
 const API_BASE_URL = "/api/mail"
 
+// 获取默认API提供商配置（用于向后兼容）
+function getDefaultProviderConfig() {
+  return {
+    id: "duckmail",
+    name: "DuckMail",
+    baseUrl: "https://api.duckmail.sbs",
+    mercureUrl: "https://mercure.duckmail.sbs/.well-known/mercure",
+  }
+}
+
+// 创建带有提供商信息的请求头
+function createHeaders(additionalHeaders: HeadersInit = {}, providerId?: string): HeadersInit {
+  // 如果指定了providerId，使用指定的提供商，否则使用默认提供商
+  const provider = providerId ? getProviderConfig(providerId) : getDefaultProviderConfig()
+  const headers: Record<string, string> = {
+    ...additionalHeaders as Record<string, string>,
+  }
+
+  if (provider) {
+    headers["X-API-Provider-Base-URL"] = provider.baseUrl
+  }
+
+  return headers
+}
+
+// 从邮箱地址推断提供商ID
+function inferProviderFromEmail(email: string): string {
+  if (typeof window === "undefined") return "duckmail"
+
+  try {
+    const domain = email.split("@")[1]
+    if (!domain) return "duckmail"
+
+    // 首先检查已知的域名模式
+    const knownDomainPatterns: Record<string, string> = {
+      // Mail.tm 的常见域名
+      "1secmail.com": "mailtm",
+      "1secmail.org": "mailtm",
+      "1secmail.net": "mailtm",
+      "wwjmp.com": "mailtm",
+      "esiix.com": "mailtm",
+      "xojxe.com": "mailtm",
+      "yoggm.com": "mailtm",
+      "punkproof.com": "mailtm",
+      "guerrillamail.info": "mailtm",
+      "grr.la": "mailtm",
+      "guerrillamail.biz": "mailtm",
+      "guerrillamail.com": "mailtm",
+      "guerrillamail.de": "mailtm",
+      "guerrillamail.net": "mailtm",
+      "guerrillamail.org": "mailtm",
+      "guerrillamailblock.com": "mailtm",
+      "pokemail.net": "mailtm",
+      "spam4.me": "mailtm",
+
+      // DuckMail 的域名
+      "duckmail.sbs": "duckmail",
+      "baldur.edu.kg": "duckmail",
+      "duckmail.cv": "duckmail",
+    }
+
+    // 检查是否是已知域名
+    if (knownDomainPatterns[domain]) {
+      console.log(`📍 [API] Domain ${domain} mapped to provider: ${knownDomainPatterns[domain]}`)
+      return knownDomainPatterns[domain]
+    }
+
+    // 获取所有域名信息（从localStorage缓存中获取，避免API调用）
+    const cachedDomains = localStorage.getItem("cached-domains")
+    if (cachedDomains) {
+      const domains = JSON.parse(cachedDomains)
+      const matchedDomain = domains.find((d: any) => d.domain === domain)
+      if (matchedDomain && matchedDomain.providerId) {
+        console.log(`📍 [API] Domain ${domain} found in cache, provider: ${matchedDomain.providerId}`)
+        return matchedDomain.providerId
+      }
+    }
+
+    // 如果没有找到匹配的域名，返回默认提供商
+    console.log(`⚠️ [API] Domain ${domain} not found, using default provider: duckmail`)
+    return "duckmail"
+  } catch (error) {
+    console.error("Error inferring provider from email:", error)
+    return "duckmail"
+  }
+}
+
+// 根据providerId获取提供商配置
+function getProviderConfig(providerId: string) {
+  if (typeof window === "undefined") return null
+
+  try {
+    // 预设提供商
+    const presetProviders = [
+      {
+        id: "duckmail",
+        name: "DuckMail",
+        baseUrl: "https://api.duckmail.sbs",
+        mercureUrl: "https://mercure.duckmail.sbs/.well-known/mercure",
+      },
+      {
+        id: "mailtm",
+        name: "Mail.tm",
+        baseUrl: "https://api.mail.tm",
+        mercureUrl: "https://mercure.mail.tm/.well-known/mercure",
+      },
+    ]
+
+    // 查找预设提供商
+    let provider = presetProviders.find(p => p.id === providerId)
+
+    // 如果没找到，查找自定义提供商
+    if (!provider) {
+      const customProviders = localStorage.getItem("custom-api-providers")
+      if (customProviders) {
+        const parsed = JSON.parse(customProviders)
+        provider = parsed.find((p: any) => p.id === providerId)
+      }
+    }
+
+    return provider || presetProviders[0] // 默认返回第一个预设提供商
+  } catch (error) {
+    console.error("Error getting provider config:", error)
+    return {
+      id: "duckmail",
+      name: "DuckMail",
+      baseUrl: "https://api.duckmail.sbs",
+      mercureUrl: "https://mercure.duckmail.sbs/.well-known/mercure",
+    }
+  }
+}
+
 // 根据API文档改进错误处理
 function getErrorMessage(status: number, errorData: any): string {
   switch (status) {
@@ -24,7 +156,18 @@ function getErrorMessage(status: number, errorData: any): string {
         }
         return violation?.message || "请求数据格式错误"
       }
-      return errorData?.detail || errorData?.message || "请求数据格式错误，请检查用户名长度或域名格式"
+
+      // 处理不同API提供商的错误消息格式
+      const errorMessage = errorData?.detail || errorData?.message || ""
+
+      // 统一处理邮箱已存在的错误
+      if (errorMessage.includes("Email address already exists") ||
+          errorMessage.includes("already used") ||
+          errorMessage.includes("already exists")) {
+        return "该邮箱地址已被使用，请尝试其他用户名"
+      }
+
+      return errorMessage || "请求数据格式错误，请检查用户名长度或域名格式"
     case 429:
       return "请求过于频繁，请稍后再试"
     default:
@@ -68,14 +211,14 @@ async function retryFetch(fn: () => Promise<any>, retries = 3, delay = 1000): Pr
   }
 }
 
-// 修改 fetchDomains 函数，移除备用域名
-export async function fetchDomains(): Promise<Domain[]> {
+// 获取单个提供商的域名
+export async function fetchDomainsFromProvider(providerId: string): Promise<Domain[]> {
   try {
     const response = await retryFetch(async () => {
       const res = await fetch(`${API_BASE_URL}?endpoint=/domains`, {
-        headers: {
+        headers: createHeaders({
           "Cache-Control": "no-cache",
-        },
+        }, providerId),
       })
 
       if (!res.ok) {
@@ -88,24 +231,83 @@ export async function fetchDomains(): Promise<Domain[]> {
     const data = await response.json()
 
     if (data && data["hydra:member"] && Array.isArray(data["hydra:member"])) {
-      return data["hydra:member"]
+      // 为每个域名添加提供商信息
+      return data["hydra:member"].map((domain: Domain) => ({
+        ...domain,
+        providerId, // 添加提供商ID
+      }))
     } else {
       console.error("Invalid domains data format:", data)
       return []
     }
   } catch (error) {
-    console.error("Error fetching domains:", error)
+    console.error(`Error fetching domains from provider ${providerId}:`, error)
+    return [] // 返回空数组而不是抛出错误，这样其他提供商仍然可以工作
+  }
+}
+
+// 获取所有启用提供商的域名
+export async function fetchAllDomains(): Promise<Domain[]> {
+  if (typeof window === "undefined") return []
+
+  try {
+    // 获取启用的提供商列表
+    const disabledProviders = JSON.parse(localStorage.getItem("disabled-api-providers") || "[]")
+    const presetProviders = [
+      { id: "duckmail", name: "DuckMail" },
+      { id: "mailtm", name: "Mail.tm" },
+    ]
+    const customProviders = JSON.parse(localStorage.getItem("custom-api-providers") || "[]")
+
+    const allProviders = [...presetProviders, ...customProviders]
+    const enabledProviders = allProviders.filter(p => !disabledProviders.includes(p.id))
+
+    // 并行获取所有启用提供商的域名
+    const domainPromises = enabledProviders.map(provider =>
+      fetchDomainsFromProvider(provider.id)
+    )
+
+    const domainResults = await Promise.all(domainPromises)
+
+    // 合并所有域名，并添加提供商名称信息
+    const allDomains: Domain[] = []
+    domainResults.forEach((domains, index) => {
+      const provider = enabledProviders[index]
+      domains.forEach(domain => {
+        allDomains.push({
+          ...domain,
+          providerId: provider.id,
+          providerName: provider.name, // 添加提供商名称用于显示
+        })
+      })
+    })
+
+    return allDomains
+  } catch (error) {
+    console.error("Error fetching domains from all providers:", error)
     throw error
   }
 }
 
-export async function createAccount(address: string, password: string): Promise<Account> {
+// 保持向后兼容的函数
+export async function fetchDomains(): Promise<Domain[]> {
+  return fetchAllDomains()
+}
+
+export async function createAccount(address: string, password: string, providerId?: string): Promise<Account> {
+  // 如果没有指定providerId，尝试从邮箱地址推断
+  if (!providerId) {
+    providerId = inferProviderFromEmail(address)
+  }
+
+  console.log(`🔧 [API] Creating account ${address} with provider: ${providerId}`)
+
   try {
     const res = await fetch(`${API_BASE_URL}?endpoint=/accounts`, {
       method: "POST",
-      headers: {
+      headers: createHeaders({
         "Content-Type": "application/json",
-      },
+      }, providerId),
       body: JSON.stringify({ address, password }),
     })
 
@@ -125,7 +327,14 @@ export async function createAccount(address: string, password: string): Promise<
     return res.json()
   } catch (error: any) {
     // 如果是422或429错误，直接抛出
-    if (error.message && (error.message.includes("该邮箱地址已被使用") || error.message.includes("请求过于频繁"))) {
+    if (error.message && (
+      error.message.includes("该邮箱地址已被使用") ||
+      error.message.includes("请求过于频繁") ||
+      error.message.includes("Email address already exists") ||
+      error.message.includes("rate limit") ||
+      error.message.includes("422") ||
+      error.message.includes("429")
+    )) {
       throw error
     }
 
@@ -133,9 +342,9 @@ export async function createAccount(address: string, password: string): Promise<
     const response = await retryFetch(async () => {
       const res = await fetch(`${API_BASE_URL}?endpoint=/accounts`, {
         method: "POST",
-        headers: {
+        headers: createHeaders({
           "Content-Type": "application/json",
-        },
+        }, providerId),
         body: JSON.stringify({ address, password }),
       })
 
@@ -151,13 +360,18 @@ export async function createAccount(address: string, password: string): Promise<
   }
 }
 
-export async function getToken(address: string, password: string): Promise<{ token: string; id: string }> {
+export async function getToken(address: string, password: string, providerId?: string): Promise<{ token: string; id: string }> {
+  // 如果没有指定providerId，尝试从邮箱地址推断
+  if (!providerId) {
+    providerId = inferProviderFromEmail(address)
+  }
+
   const response = await retryFetch(async () => {
     const res = await fetch(`${API_BASE_URL}?endpoint=/token`, {
       method: "POST",
-      headers: {
+      headers: createHeaders({
         "Content-Type": "application/json",
-      },
+      }, providerId),
       body: JSON.stringify({ address, password }),
     })
 
@@ -172,12 +386,12 @@ export async function getToken(address: string, password: string): Promise<{ tok
   return response.json()
 }
 
-export async function getAccount(token: string): Promise<Account> {
+export async function getAccount(token: string, providerId?: string): Promise<Account> {
   const response = await retryFetch(async () => {
     const res = await fetch(`${API_BASE_URL}?endpoint=/me`, {
-      headers: {
+      headers: createHeaders({
         Authorization: `Bearer ${token}`,
-      },
+      }, providerId),
     })
 
     if (!res.ok) {
@@ -191,15 +405,15 @@ export async function getAccount(token: string): Promise<Account> {
   return response.json()
 }
 
-export async function getMessages(token: string, page = 1): Promise<{ messages: Message[]; total: number; hasMore: boolean }> {
+export async function getMessages(token: string, page = 1, providerId?: string): Promise<{ messages: Message[]; total: number; hasMore: boolean }> {
   const timestamp = new Date().toISOString()
   console.log(`📡 [API] getMessages called at ${timestamp} - page: ${page}`)
 
   const response = await retryFetch(async () => {
     const res = await fetch(`${API_BASE_URL}?endpoint=/messages&page=${page}`, {
-      headers: {
+      headers: createHeaders({
         Authorization: `Bearer ${token}`,
-      },
+      }, providerId),
     })
 
     if (!res.ok) {
@@ -228,12 +442,12 @@ export async function getMessages(token: string, page = 1): Promise<{ messages: 
   }
 }
 
-export async function getMessage(token: string, id: string): Promise<MessageDetail> {
+export async function getMessage(token: string, id: string, providerId?: string): Promise<MessageDetail> {
   const response = await retryFetch(async () => {
     const res = await fetch(`${API_BASE_URL}?endpoint=/messages/${id}`, {
-      headers: {
+      headers: createHeaders({
         Authorization: `Bearer ${token}`,
-      },
+      }, providerId),
     })
 
     if (!res.ok) {
@@ -247,14 +461,14 @@ export async function getMessage(token: string, id: string): Promise<MessageDeta
   return response.json()
 }
 
-export async function markMessageAsRead(token: string, id: string): Promise<{ seen: boolean }> {
+export async function markMessageAsRead(token: string, id: string, providerId?: string): Promise<{ seen: boolean }> {
   const response = await retryFetch(async () => {
     const res = await fetch(`${API_BASE_URL}?endpoint=/messages/${id}`, {
       method: "PATCH",
-      headers: {
+      headers: createHeaders({
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/merge-patch+json",
-      },
+      }, providerId),
       body: JSON.stringify({ seen: true }), // 需要发送请求体来标记为已读
     })
 
@@ -274,13 +488,13 @@ export async function markMessageAsRead(token: string, id: string): Promise<{ se
   return response
 }
 
-export async function deleteMessage(token: string, id: string): Promise<void> {
+export async function deleteMessage(token: string, id: string, providerId?: string): Promise<void> {
   await retryFetch(async () => {
     const res = await fetch(`${API_BASE_URL}?endpoint=/messages/${id}`, {
       method: "DELETE",
-      headers: {
+      headers: createHeaders({
         Authorization: `Bearer ${token}`,
-      },
+      }, providerId),
     })
 
     if (!res.ok) {
@@ -292,13 +506,13 @@ export async function deleteMessage(token: string, id: string): Promise<void> {
   })
 }
 
-export async function deleteAccount(token: string, id: string): Promise<void> {
+export async function deleteAccount(token: string, id: string, providerId?: string): Promise<void> {
   await retryFetch(async () => {
     const res = await fetch(`${API_BASE_URL}?endpoint=/accounts/${id}`, {
       method: "DELETE",
-      headers: {
+      headers: createHeaders({
         Authorization: `Bearer ${token}`,
-      },
+      }, providerId),
     })
 
     if (!res.ok) {

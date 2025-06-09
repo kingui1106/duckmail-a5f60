@@ -56,7 +56,8 @@ export default function MessageList({ onSelectMessage, currentLocale, refreshKey
 
     try {
       setLoading(true)
-      const { messages: fetchedMessages } = await getMessages(token)
+      const providerId = currentAccount.providerId || "duckmail"
+      const { messages: fetchedMessages } = await getMessages(token, 1, providerId)
       setMessages(fetchedMessages || [])
       setError(null)
     } catch (err) {
@@ -98,7 +99,8 @@ export default function MessageList({ onSelectMessage, currentLocale, refreshKey
       try {
         setLoading(true)
         console.log(`📥 [MessageList] Loading initial messages for account: ${currentAccount.address}`)
-        const { messages: fetchedMessages } = await getMessages(token)
+        const providerId = currentAccount.providerId || "duckmail"
+        const { messages: fetchedMessages } = await getMessages(token, 1, providerId)
         setMessages(fetchedMessages || [])
         setError(null)
         console.log(`📥 [MessageList] Loaded ${fetchedMessages?.length || 0} initial messages`)

@@ -4,9 +4,11 @@ import { useState, useEffect } from "react"
 import { Button } from "@heroui/button"
 import { Card, CardBody, CardHeader } from "@heroui/card"
 import { useAuth } from "@/contexts/auth-context"
+import { useApiProvider } from "@/contexts/api-provider-context"
 
 export function MercureTest() {
-  const { currentAccount, token } = useAuth()
+  const { currentAccount } = useAuth()
+  const { getProviderById } = useApiProvider()
   const [isConnected, setIsConnected] = useState(false)
   const [events, setEvents] = useState<any[]>([])
   const [eventSource, setEventSource] = useState<EventSource | null>(null)
@@ -18,11 +20,20 @@ export function MercureTest() {
       return
     }
 
+    // 获取当前账户的提供商配置
+    const providerId = currentAccount.providerId || "duckmail"
+    const provider = getProviderById(providerId)
+
+    if (!provider) {
+      setError(`找不到提供商配置: ${providerId}`)
+      return
+    }
+
     try {
-      // 构建 Mercure URL
-      const mercureUrl = new URL("https://mercure.mail.tm/.well-known/mercure")
+      // 构建 Mercure URL - 使用当前账户的提供商配置
+      const mercureUrl = new URL(provider.mercureUrl)
       mercureUrl.searchParams.append("topic", `/accounts/${currentAccount.id}`)
-      
+
       console.log("🔌 Connecting to Mercure:", mercureUrl.toString())
       
       const es = new EventSource(mercureUrl.toString())
@@ -124,15 +135,15 @@ export function MercureTest() {
             
             <div className="flex gap-2">
               {!isConnected ? (
-                <Button color="primary" onClick={connectToMercure}>
+                <Button color="primary" onPress={connectToMercure}>
                   连接 Mercure
                 </Button>
               ) : (
-                <Button color="danger" onClick={disconnect}>
+                <Button color="danger" onPress={disconnect}>
                   断开连接
                 </Button>
               )}
-              <Button variant="flat" onClick={clearEvents}>
+              <Button variant="flat" onPress={clearEvents}>
                 清空日志
               </Button>
             </div>

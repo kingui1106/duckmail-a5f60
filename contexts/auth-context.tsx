@@ -11,6 +11,8 @@ interface AuthContextType extends AuthState {
   deleteAccount: (id: string) => Promise<void>
   switchAccount: (account: Account) => Promise<void>
   addAccount: (account: Account, token: string, password?: string) => void
+  getAccountsForProvider: (providerId: string) => Account[]
+  getCurrentProviderAccounts: () => Account[]
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -23,13 +25,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: false,
   })
 
+
+
+  // 从邮箱地址获取提供商ID
+  const getProviderIdFromEmail = (email: string) => {
+    if (typeof window === "undefined") return "duckmail"
+
+    try {
+      const domain = email.split("@")[1]
+      if (!domain) return "duckmail"
+
+      // 获取缓存的域名信息
+      const cachedDomains = localStorage.getItem("cached-domains")
+      if (cachedDomains) {
+        const domains = JSON.parse(cachedDomains)
+        const matchedDomain = domains.find((d: any) => d.domain === domain)
+        if (matchedDomain && matchedDomain.providerId) {
+          return matchedDomain.providerId
+        }
+      }
+
+      return "duckmail"
+    } catch (error) {
+      console.error("Error getting provider from email:", error)
+      return "duckmail"
+    }
+  }
+
   useEffect(() => {
     // 从本地存储加载认证状态
     const savedAuth = localStorage.getItem("auth")
     if (savedAuth) {
       try {
         const parsedAuth = JSON.parse(savedAuth)
-        setAuthState(parsedAuth)
+
+        // 数据迁移：为现有账户添加providerId（向后兼容）
+        const migratedAccounts = parsedAuth.accounts?.map((account: Account) => ({
+          ...account,
+          providerId: account.providerId || "duckmail" // 默认为duckmail
+        })) || []
+
+        const migratedCurrentAccount = parsedAuth.currentAccount ? {
+          ...parsedAuth.currentAccount,
+          providerId: parsedAuth.currentAccount.providerId || "duckmail"
+        } : null
+
+        setAuthState({
+          ...parsedAuth,
+          accounts: migratedAccounts,
+          currentAccount: migratedCurrentAccount
+        })
       } catch (error) {
         console.error("Failed to parse auth from localStorage:", error)
       }
@@ -50,13 +95,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (address: string, password: string) => {
     try {
       const { token, id } = await getToken(address, password)
-      const account = await getAccount(token)
+      const providerId = getProviderIdFromEmail(address)
+      const account = await getAccount(token, providerId)
 
-      // 添加密码和token到账户信息
+      // 添加密码、token和providerId到账户信息
       const accountWithAuth = {
         ...account,
         password,
         token,
+        providerId,
       }
 
       // 检查账户是否已存在
@@ -87,7 +134,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (address: string, password: string) => {
     try {
-      await createAccount(address, password)
+      const providerId = getProviderIdFromEmail(address)
+      await createAccount(address, password, providerId)
       // 注册成功后直接登录
       await login(address, password)
     } catch (error) {
@@ -127,39 +175,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log(`🔄 [Auth] Switching to account: ${account.address}`)
 
-      // 如果账户有存储的密码，重新获取token
-      if (account.password) {
-        console.log(`🔑 [Auth] Getting fresh token for account: ${account.address}`)
-        const { token } = await getToken(account.address, account.password)
-        const updatedAccount = await getAccount(token)
+      // 立即切换到目标账户，提供即时反馈
+      setAuthState({
+        ...authState,
+        token: account.token || null,
+        currentAccount: account,
+        isAuthenticated: !!account.token,
+      })
 
-        // 更新账户信息和token
-        const accountWithAuth = {
-          ...updatedAccount,
-          password: account.password,
-          token,
-        }
-
-        // 更新accounts数组中的账户信息
-        const updatedAccounts = authState.accounts.map((acc) =>
-          acc.address === account.address ? accountWithAuth : acc
-        )
-
-        console.log(`✅ [Auth] Successfully switched to account: ${account.address}`)
-        setAuthState({
-          token,
-          currentAccount: accountWithAuth,
-          accounts: updatedAccounts,
-          isAuthenticated: true,
-        })
-      } else if (account.token) {
-        // 如果有存储的token，先验证是否有效
+      // 如果有token，在后台验证并更新
+      if (account.token) {
         console.log(`🔍 [Auth] Validating existing token for account: ${account.address}`)
         try {
-          const updatedAccount = await getAccount(account.token)
+          const accountProviderId = account.providerId || "duckmail"
+          const updatedAccount = await getAccount(account.token, accountProviderId)
           const accountWithAuth = {
             ...updatedAccount,
+            password: account.password,
             token: account.token,
+            providerId: account.providerId || "duckmail",
           }
 
           // 更新accounts数组中的账户信息
@@ -167,7 +201,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             acc.address === account.address ? accountWithAuth : acc
           )
 
-          console.log(`✅ [Auth] Token valid, switched to account: ${account.address}`)
+          console.log(`✅ [Auth] Token validated, account info updated: ${account.address}`)
           setAuthState({
             token: account.token,
             currentAccount: accountWithAuth,
@@ -176,24 +210,85 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           })
         } catch (tokenError) {
           console.warn(`⚠️ [Auth] Stored token invalid for account: ${account.address}`)
-          // Token 无效，但仍然切换到该账户，用户需要重新登录
+          // Token 无效，如果有密码则尝试重新获取token
+          if (account.password) {
+            try {
+              console.log(`🔑 [Auth] Token invalid, getting fresh token for account: ${account.address}`)
+              const accountProviderId = account.providerId || "duckmail"
+              const { token } = await getToken(account.address, account.password, accountProviderId)
+              const updatedAccount = await getAccount(token, accountProviderId)
+
+              const accountWithAuth = {
+                ...updatedAccount,
+                password: account.password,
+                token,
+                providerId: account.providerId || "duckmail",
+              }
+
+              const updatedAccounts = authState.accounts.map((acc) =>
+                acc.address === account.address ? accountWithAuth : acc
+              )
+
+              console.log(`✅ [Auth] Fresh token obtained, switched to account: ${account.address}`)
+              setAuthState({
+                token,
+                currentAccount: accountWithAuth,
+                accounts: updatedAccounts,
+                isAuthenticated: true,
+              })
+            } catch (refreshError) {
+              console.error(`❌ [Auth] Failed to refresh token for account: ${account.address}`)
+              setAuthState({
+                ...authState,
+                token: null,
+                currentAccount: account,
+                isAuthenticated: false,
+              })
+              throw new Error("Token 已过期且刷新失败，请重新登录")
+            }
+          } else {
+            setAuthState({
+              ...authState,
+              token: null,
+              currentAccount: account,
+              isAuthenticated: false,
+            })
+            throw new Error("Token 已过期，请重新登录")
+          }
+        }
+      } else if (account.password) {
+        // 没有token但有密码，在后台获取token
+        try {
+          console.log(`🔑 [Auth] Getting token for account: ${account.address}`)
+          const accountProviderId = account.providerId || "duckmail"
+          const { token } = await getToken(account.address, account.password, accountProviderId)
+          const updatedAccount = await getAccount(token, accountProviderId)
+
+          const accountWithAuth = {
+            ...updatedAccount,
+            password: account.password,
+            token,
+            providerId: account.providerId || "duckmail",
+          }
+
+          const updatedAccounts = authState.accounts.map((acc) =>
+            acc.address === account.address ? accountWithAuth : acc
+          )
+
+          console.log(`✅ [Auth] Token obtained, switched to account: ${account.address}`)
           setAuthState({
-            ...authState,
-            token: null,
-            currentAccount: account,
-            isAuthenticated: false,
+            token,
+            currentAccount: accountWithAuth,
+            accounts: updatedAccounts,
+            isAuthenticated: true,
           })
-          throw new Error("Token 已过期，请重新登录")
+        } catch (error) {
+          console.error(`❌ [Auth] Failed to get token for account: ${account.address}`)
+          throw new Error("获取登录凭据失败，请重新登录")
         }
       } else {
         // 没有密码也没有token
         console.warn(`⚠️ [Auth] No credentials available for account: ${account.address}`)
-        setAuthState({
-          ...authState,
-          token: null,
-          currentAccount: account,
-          isAuthenticated: false,
-        })
         throw new Error("缺少登录凭据，请重新登录")
       }
     } catch (error) {
@@ -203,10 +298,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const addAccount = (account: Account, token: string, password?: string) => {
+    const providerId = getProviderIdFromEmail(account.address)
     const accountWithAuth = {
       ...account,
       password,
       token,
+      providerId,
     }
 
     setAuthState({
@@ -215,6 +312,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       accounts: [...authState.accounts, accountWithAuth],
       isAuthenticated: true,
     })
+  }
+
+  // 获取指定提供商的账户
+  const getAccountsForProvider = (providerId: string): Account[] => {
+    return authState.accounts.filter(account =>
+      (account.providerId || "duckmail") === providerId
+    )
+  }
+
+  // 获取当前账户的提供商的所有账户
+  const getCurrentProviderAccounts = (): Account[] => {
+    if (!authState.currentAccount) return []
+    const currentProviderId = authState.currentAccount.providerId || "duckmail"
+    return getAccountsForProvider(currentProviderId)
   }
 
   return (
@@ -227,6 +338,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         deleteAccount,
         switchAccount,
         addAccount,
+        getAccountsForProvider,
+        getCurrentProviderAccounts,
       }}
     >
       {children}

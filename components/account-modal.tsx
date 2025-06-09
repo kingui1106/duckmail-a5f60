@@ -1,15 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal"
 import { Button } from "@heroui/button"
 import { Input } from "@heroui/input"
-import { Select, SelectItem } from "@heroui/select"
-import { Spinner } from "@heroui/spinner"
+
 import { useAuth } from "@/contexts/auth-context"
-import { fetchDomains } from "@/lib/api"
-import type { Domain } from "@/types"
-import { Eye, EyeOff, User, RefreshCw, AlertCircle } from "lucide-react"
+import { DomainSelector } from "@/components/domain-selector"
+import { Eye, EyeOff, User, AlertCircle } from "lucide-react"
 import { Card, CardBody } from "@heroui/card"
 
 interface AccountModalProps {
@@ -21,43 +19,14 @@ interface AccountModalProps {
 export default function AccountModal({ isOpen, onClose, currentLocale }: AccountModalProps) {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
-  const [domains, setDomains] = useState<Domain[]>([])
   const [selectedDomain, setSelectedDomain] = useState<string>("")
   const [isLoading, setIsLoading] = useState(false)
-  const [isLoadingDomains, setIsLoadingDomains] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const [showLoginOption, setShowLoginOption] = useState(false)
   const { register, login } = useAuth()
 
-  const getDomains = async () => {
-    setIsLoadingDomains(true)
-    setError(null)
-    try {
-      const domainsData = await fetchDomains()
-      if (Array.isArray(domainsData) && domainsData.length > 0) {
-        setDomains(domainsData)
-        if (!selectedDomain && domainsData.length > 0) {
-          setSelectedDomain(domainsData[0].domain)
-        }
-      } else {
-        setError(currentLocale === "en" ? "Unable to get available domains, please try again later" : "无法获取可用域名，请稍后再试")
-        setDomains([])
-      }
-    } catch (error) {
-      console.error("Failed to fetch domains:", error)
-      setError(currentLocale === "en" ? "Failed to get domains, please check network connection" : "获取域名失败，请检查网络连接")
-      setDomains([])
-    } finally {
-      setIsLoadingDomains(false)
-    }
-  }
 
-  useEffect(() => {
-    if (isOpen) {
-      getDomains()
-    }
-  }, [isOpen])
 
   const handleSubmit = async () => {
     if (!username || !selectedDomain || !password) {
@@ -83,7 +52,13 @@ export default function AccountModal({ isOpen, onClose, currentLocale }: Account
       console.error("Registration failed:", error)
 
       // 根据错误类型提供不同的处理
-      if (error.message && error.message.includes("该邮箱地址已被使用")) {
+      const errorMessage = error.message || ""
+
+      // 检查是否是邮箱已存在的错误（支持中英文）
+      if (errorMessage.includes("该邮箱地址已被使用") ||
+          errorMessage.includes("Email address already exists") ||
+          errorMessage.includes("already used") ||
+          errorMessage.includes("already exists")) {
         // 邮箱已存在，提示用户可以尝试登录
         setError(
           currentLocale === "en"
@@ -91,7 +66,9 @@ export default function AccountModal({ isOpen, onClose, currentLocale }: Account
             : "该邮箱地址已被使用。如果这是您的账户，您可以尝试登录。"
         )
         setShowLoginOption(true)
-      } else if (error.message && error.message.includes("请求过于频繁")) {
+      } else if (errorMessage.includes("请求过于频繁") ||
+                 errorMessage.includes("rate limit") ||
+                 errorMessage.includes("Too many requests")) {
         // 请求过于频繁
         setError(
           currentLocale === "en"
@@ -101,7 +78,7 @@ export default function AccountModal({ isOpen, onClose, currentLocale }: Account
         setShowLoginOption(false)
       } else {
         // 其他错误
-        setError(error.message || (currentLocale === "en" ? "Failed to create account, please try again later" : "创建账户失败，请稍后再试"))
+        setError(errorMessage || (currentLocale === "en" ? "Failed to create account, please try again later" : "创建账户失败，请稍后再试"))
         setShowLoginOption(false)
       }
     } finally {
@@ -168,39 +145,20 @@ export default function AccountModal({ isOpen, onClose, currentLocale }: Account
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {currentLocale === "en" ? "Email" : "电子邮件"}
               </label>
-              <div className="flex gap-2">
+              <div className="space-y-3">
                 <Input
+                  label={currentLocale === "en" ? "Username" : "用户名"}
                   placeholder="johndoe"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="flex-1"
                   isDisabled={isLoading}
                 />
-                {isLoadingDomains ? (
-                  <div className="w-40 flex items-center justify-center border rounded-lg">
-                    <Spinner size="sm" />
-                  </div>
-                ) : domains.length > 0 ? (
-                  <Select
-                    selectedKeys={selectedDomain ? [selectedDomain] : []}
-                    onChange={(e) => setSelectedDomain(e.target.value)}
-                    className="w-40"
-                    isDisabled={isLoading}
-                  >
-                    {domains.map((domain) => (
-                      <SelectItem key={domain.domain}>
-                        {domain.domain}
-                      </SelectItem>
-                    ))}
-                  </Select>
-                ) : (
-                  <div className="w-40 flex items-center gap-2">
-                    <Input disabled placeholder={currentLocale === "en" ? "No domains available" : "无可用域名"} className="flex-1" />
-                    <Button isIconOnly size="sm" variant="light" onPress={getDomains} isDisabled={isLoadingDomains}>
-                      <RefreshCw size={16} />
-                    </Button>
-                  </div>
-                )}
+                <DomainSelector
+                  value={selectedDomain}
+                  onSelectionChange={setSelectedDomain}
+                  currentLocale={currentLocale}
+                  isDisabled={isLoading}
+                />
               </div>
               {!username && <p className="text-xs text-red-500 mt-1">{currentLocale === "en" ? "Required" : "必填"}</p>}
             </div>
@@ -246,34 +204,42 @@ export default function AccountModal({ isOpen, onClose, currentLocale }: Account
             </Card>
 
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-600">{error}</p>
-                <div className="flex gap-2 mt-2">
-                  {error.includes("网络") && (
-                    <Button
-                      size="sm"
-                      variant="light"
-                      color="primary"
-                      onPress={getDomains}
-                      startContent={<RefreshCw size={14} />}
-                    >
-                      {currentLocale === "en" ? "Retry Get Domains" : "重试获取域名"}
-                    </Button>
-                  )}
-                  {showLoginOption && (
-                    <Button
-                      size="sm"
-                      variant="light"
-                      color="primary"
-                      onPress={handleTryLogin}
-                      isLoading={isLoading}
-                      startContent={<User size={14} />}
-                    >
-                      {currentLocale === "en" ? "Try Login" : "尝试登录"}
-                    </Button>
-                  )}
-                </div>
-              </div>
+              <Card className="border-0 shadow-sm">
+                <CardBody className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0">
+                      <div className="w-5 h-5 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                        <svg className="w-3 h-3 text-red-600 dark:text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-red-800 dark:text-red-200 mb-1">
+                        {currentLocale === "en" ? "Account Creation Failed" : "账户创建失败"}
+                      </p>
+                      <p className="text-sm text-red-600 dark:text-red-300 leading-relaxed">
+                        {error}
+                      </p>
+                      {showLoginOption && (
+                        <div className="flex gap-2 mt-3">
+                          <Button
+                            size="sm"
+                            variant="flat"
+                            color="primary"
+                            onPress={handleTryLogin}
+                            isLoading={isLoading}
+                            startContent={<User size={14} />}
+                            className="font-medium"
+                          >
+                            {currentLocale === "en" ? "Try Login" : "尝试登录"}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
             )}
           </div>
         </ModalBody>
@@ -285,7 +251,7 @@ export default function AccountModal({ isOpen, onClose, currentLocale }: Account
             color="primary"
             onPress={handleSubmit}
             isLoading={isLoading}
-            isDisabled={!username || !selectedDomain || !password || domains.length === 0}
+            isDisabled={!username || !selectedDomain || !password}
           >
             {currentLocale === "en" ? "Create" : "创建"}
           </Button>
