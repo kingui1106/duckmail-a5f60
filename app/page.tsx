@@ -126,6 +126,12 @@ function MainContent() {
       return
     }
 
+    if (item === "github") {
+      // 跳转到GitHub仓库
+      window.open("https://github.com/Syferie/DuckMail", "_blank", "noopener,noreferrer")
+      return
+    }
+
     // 其他选项显示敬请期待
     const titles = {
       api: currentLocale === "en" ? "API Documentation" : "API 文档",

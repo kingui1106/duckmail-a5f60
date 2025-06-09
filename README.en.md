@@ -22,6 +22,12 @@
 - 🔄 **Real-time Updates** - Supports Mercure SSE for real-time message notifications
 - 🌙 **Dark Mode** - Light and dark theme support
 - 📧 **Multi-account Management** - Create and manage multiple temporary email accounts
+- 🔧 **Multi-API Provider** - Support switching between DuckMail API and Mail.tm API
+- 🎯 **Smart Error Handling** - Elegant error messages and automatic retry mechanisms
+- 🔗 **Open Source** - Fully open source with community contributions
+- 🔧 **Multi-API Provider** - Support switching between DuckMail API and Mail.tm API
+- 🎯 **Smart Error Handling** - Elegant error messages and automatic retry mechanisms
+- 🔗 **Open Source** - Fully open source with community contributions
 
 ## 📸 Screenshots
 
@@ -92,7 +98,7 @@ pnpm start
 - **UI Component Library**: HeroUI
 - **Styling**: Tailwind CSS
 - **Icons**: Lucide React
-- **API**: Mail.tm REST API
+- **API**: Mail.tm REST API / DuckMail API
 - **Real-time Communication**: Mercure SSE
 - **Language**: TypeScript
 
@@ -142,6 +148,14 @@ If you have any questions or suggestions, please contact us through:
 
 - Create an [Issue](https://github.com/syferie/duckmail/issues)
 - Send email to: syferie@proton.me
+
+## 💖 Sponsor
+
+If this project helps you, welcome to sponsor and support the developer to continue maintaining and improving the project:
+
+[![爱发电](https://img.shields.io/badge/%E7%88%B1%E5%8F%91%E7%94%B5-syferie-946ce6?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMCA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDQgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K)](https://afdian.com/a/syferie)
+
+Your support is the driving force for the project's continued development! 🚀
 
 ---
 

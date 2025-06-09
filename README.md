@@ -22,6 +22,9 @@
 - 🔄 **实时更新** - 支持 Mercure SSE 实时消息推送
 - 🌙 **深色模式** - 支持明暗主题切换
 - 📧 **多账户管理** - 支持创建和管理多个临时邮箱
+- 🔧 **多API提供商** - 支持 DuckMail API 和 Mail.tm API 切换
+- 🎯 **智能错误处理** - 优雅的错误提示和自动重试机制
+- 🔗 **开源透明** - 完全开源，支持社区贡献
 
 ## 📸 应用展示
 
@@ -92,7 +95,7 @@ pnpm start
 - **UI 组件库**: HeroUI
 - **样式**: Tailwind CSS
 - **图标**: Lucide React
-- **API**: Mail.tm REST API
+- **API**: Mail.tm REST API / DuckMail API
 - **实时通信**: Mercure SSE
 - **语言**: TypeScript
 
@@ -142,6 +145,14 @@ pnpm start
 
 - 创建 [Issue](https://github.com/syferie/duckmail/issues)
 - 发送邮件到: syferie@proton.me
+
+## 💖 赞助支持
+
+如果这个项目对你有帮助，欢迎赞助支持开发者继续维护和改进项目：
+
+[![爱发电](https://img.shields.io/badge/%E7%88%B1%E5%8F%91%E7%94%B5-syferie-946ce6?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMCA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDQgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K)](https://afdian.com/a/syferie)
+
+你的支持是项目持续发展的动力！🚀
 
 ---
 
