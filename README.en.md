@@ -59,7 +59,7 @@ Click the button below to deploy to Vercel with one click:
 
 > ⚠️ **Note**: Vercel deployment only supports DuckMail API, not Mail.tm API (because Mail.tm blocks Vercel's IP addresses). Please disable the Mail.tm provider in settings after deployment.
 >
-> 📁 **Configuration**: The project includes `vercel.json` configuration file to ensure proper Next.js deployment settings.
+> 🚀 **Zero Configuration**: Vercel automatically detects Next.js projects and uses optimal configuration for deployment.
 
 ### Local Development
 

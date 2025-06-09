@@ -56,7 +56,7 @@
 
 > ⚠️ **注意**：Vercel 部署仅支持 DuckMail API，不支持 Mail.tm API（因为 Mail.tm 屏蔽了 Vercel 的 IP 地址）。部署后请在设置中禁用 Mail.tm 提供商。
 >
-> 📁 **配置文件**：项目已包含 `vercel.json` 配置文件，确保正确的 Next.js 部署设置。
+> 🚀 **零配置**：Vercel 会自动检测 Next.js 项目并使用最佳配置进行部署。
 
 ### 本地开发
 
