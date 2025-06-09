@@ -153,15 +153,15 @@ export function SettingsPanel({ isOpen, onClose, currentLocale }: SettingsPanelP
               </h3>
               <div className="space-y-3">
                 {providers.map((provider) => (
-                  <Card key={provider.id} className={`border ${isProviderEnabled(provider.id) ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
+                  <Card key={provider.id} className={`border ${isProviderEnabled(provider.id) ? 'border-green-200 bg-green-50 dark:border-green-700 dark:bg-green-900/20' : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50'}`}>
                     <CardBody className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                           <div className={`w-3 h-3 rounded-full ${isProviderEnabled(provider.id) ? 'bg-green-500' : 'bg-gray-400'}`} />
                           <div>
-                            <div className="font-medium">{provider.name}</div>
-                            <div className="text-sm text-gray-500">{provider.baseUrl}</div>
-                            <div className="text-xs text-gray-400">
+                            <div className="font-medium text-gray-900 dark:text-gray-100">{provider.name}</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">{provider.baseUrl}</div>
+                            <div className="text-xs text-gray-400 dark:text-gray-500">
                               {isProviderEnabled(provider.id)
                                 ? (isZh ? "已启用" : "Enabled")
                                 : (isZh ? "已禁用" : "Disabled")
