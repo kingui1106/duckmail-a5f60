@@ -12,7 +12,7 @@ import { Button } from "@heroui/button"
 import { Input } from "@heroui/input"
 import { Card, CardBody, CardHeader } from "@heroui/card"
 
-import { Divider } from "@heroui/divider"
+import { Divider } from "@heroui/react"
 import { Trash2, Plus, Edit3 } from "lucide-react"
 import { useApiProvider } from "@/contexts/api-provider-context"
 import { useHeroUIToast } from "@/hooks/use-heroui-toast"

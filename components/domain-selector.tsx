@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react"
 import { Select, SelectItem } from "@heroui/select"
 import { Spinner } from "@heroui/spinner"
-import { Badge } from "@heroui/badge"
-import { fetchAllDomains } from "@/lib/api"
+
 import type { Domain } from "@/types"
 
 interface DomainSelectorProps {
@@ -47,6 +46,7 @@ export function DomainSelector({ value, onSelectionChange, currentLocale, isDisa
         // 并发获取所有提供商的域名，哪个先完成就先显示哪个
         let completedCount = 0
         let hasAnySuccess = false
+        let firstSuccessReceived = false
 
         // 为每个提供商创建独立的请求Promise
         const providerPromises = enabledProviders.map(async (provider) => {
@@ -75,6 +75,13 @@ export function DomainSelector({ value, onSelectionChange, currentLocale, isDisa
               })
 
               hasAnySuccess = true
+
+              // 第一次成功获取到域名时，立即停止loading状态
+              if (!firstSuccessReceived) {
+                firstSuccessReceived = true
+                setLoading(false)
+              }
+
               console.log(`✅ [DomainSelector] Loaded ${providerDomains.length} domains from ${provider.name}`)
             } else {
               console.log(`⚠️ [DomainSelector] No domains found for ${provider.name}`)
@@ -84,8 +91,12 @@ export function DomainSelector({ value, onSelectionChange, currentLocale, isDisa
           } finally {
             completedCount++
             // 如果所有请求都完成了，检查是否有任何成功的
-            if (completedCount === enabledProviders.length && !hasAnySuccess) {
-              setError(isZh ? "所有提供商都无法获取域名" : "Failed to fetch domains from all providers")
+            if (completedCount === enabledProviders.length) {
+              if (!hasAnySuccess) {
+                setError(isZh ? "所有提供商都无法获取域名" : "Failed to fetch domains from all providers")
+              }
+              // 确保loading状态被设置为false
+              setLoading(false)
             }
           }
         })
@@ -96,7 +107,6 @@ export function DomainSelector({ value, onSelectionChange, currentLocale, isDisa
       } catch (err) {
         console.error("Failed to load domains:", err)
         setError(isZh ? "获取域名失败" : "Failed to fetch domains")
-      } finally {
         setLoading(false)
       }
     }
@@ -172,7 +182,7 @@ export function DomainSelector({ value, onSelectionChange, currentLocale, isDisa
             base: "bg-gray-50 dark:bg-gray-800 rounded-md mx-1 my-1",
             wrapper: "px-3 py-2",
           }}
-          isDisabled
+          isReadOnly
         >
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${
@@ -185,7 +195,7 @@ export function DomainSelector({ value, onSelectionChange, currentLocale, isDisa
           </div>
         </SelectItem>,
         // 该提供商的域名
-        ...providerDomains.map((domain, index) => (
+        ...providerDomains.map((domain) => (
           <SelectItem
             key={`${providerId}-${domain.domain}`}
             textValue={domain.domain}
