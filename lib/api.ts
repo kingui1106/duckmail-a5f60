@@ -36,31 +36,9 @@ function inferProviderFromEmail(email: string): string {
     if (!domain) return "duckmail"
 
     // 首先检查已知的域名模式
-    const knownDomainPatterns: Record<string, string> = {
+    const knownDomainPatterns: Record<string, string> =   {
       // Mail.tm 的常见域名
-      "1secmail.com": "mailtm",
-      "1secmail.org": "mailtm",
-      "1secmail.net": "mailtm",
-      "wwjmp.com": "mailtm",
-      "esiix.com": "mailtm",
-      "xojxe.com": "mailtm",
-      "yoggm.com": "mailtm",
-      "punkproof.com": "mailtm",
-      "guerrillamail.info": "mailtm",
-      "grr.la": "mailtm",
-      "guerrillamail.biz": "mailtm",
-      "guerrillamail.com": "mailtm",
-      "guerrillamail.de": "mailtm",
-      "guerrillamail.net": "mailtm",
-      "guerrillamail.org": "mailtm",
-      "guerrillamailblock.com": "mailtm",
-      "pokemail.net": "mailtm",
-      "spam4.me": "mailtm",
-
-      // DuckMail 的域名
-      "duckmail.sbs": "duckmail",
-      "baldur.edu.kg": "duckmail",
-      "duckmail.cv": "duckmail",
+      "1secmail.com": "mailtm"
     }
 
     // 检查是否是已知域名

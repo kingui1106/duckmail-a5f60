@@ -85,7 +85,7 @@ export default function LoginModal({ isOpen, onClose, accountAddress, currentLoc
               </label>
               <Input
                 type="email"
-                placeholder="example@duckmail.cv"
+                placeholder="example@duckmail.sbs"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 isDisabled={isLoading || !!accountAddress}
@@ -123,8 +123,8 @@ export default function LoginModal({ isOpen, onClose, accountAddress, currentLoc
                     </p>
                     <p className="text-yellow-700 dark:text-yellow-300">
                       {currentLocale === "en"
-                        ? "duckmail.cv does not provide password recovery. Please make sure you remember the correct password."
-                        : "duckmail.cv 不提供密码找回功能，请确保您记住了正确的密码。"
+                        ? "duckmail.sbs does not provide password recovery. Please make sure you remember the correct password."
+                        : "duckmail.sbs 不提供密码找回功能，请确保您记住了正确的密码。"
                       }
                     </p>
                   </div>

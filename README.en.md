@@ -9,7 +9,7 @@
 
   A modern temporary email service built with Next.js and Mail.tm API, providing secure, fast, and anonymous disposable email functionality.
 
-  **🌐 [Try it now at duckmail.cv](https://duckmail.cv)**
+  **🌐 [Try it now at duckmail.sbs](https://duckmail.sbs)**
 </div>
 
 ## ✨ Features

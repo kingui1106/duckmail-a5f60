@@ -194,8 +194,8 @@ export default function AccountModal({ isOpen, onClose, currentLocale }: Account
                     </p>
                     <p className="text-yellow-700 dark:text-yellow-300">
                       {currentLocale === "en"
-                        ? "duckmail.cv does not provide password recovery. Please remember your password."
-                        : "duckmail.cv 不提供密码找回功能，请务必记住您设置的密码。"
+                        ? "duckmail.sbs does not provide password recovery. Please remember your password."
+                        : "duckmail.sbs 不提供密码找回功能，请务必记住您设置的密码。"
                       }
                     </p>
                   </div>
