@@ -447,6 +447,24 @@ export async function getToken(address: string, password: string, providerId?: s
 
   return response.json()
 }
+export async function getMercureToken(token: string, providerId?: string): Promise<{ token: string }> {
+  const response = await retryFetch(async () => {
+    const res = await fetch(`${API_BASE_URL}?endpoint=/mercure/token`, {
+      headers: createHeaders({
+        Authorization: `Bearer ${token}`,
+      }, providerId),
+    })
+
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({}))
+      throw new Error(getErrorMessage(res.status, error))
+    }
+
+    return res
+  })
+
+  return response.json()
+}
 
 export async function getAccount(token: string, providerId?: string): Promise<Account> {
   const response = await retryFetch(async () => {
