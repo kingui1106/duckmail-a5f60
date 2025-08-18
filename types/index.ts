@@ -1,10 +1,16 @@
 export interface Domain {
   id: string
   domain: string
+  domainName?: string // 域名名称，有些API返回这个字段
   isActive: boolean
   isPrivate: boolean
+  isPublic?: boolean // 是否为公共域名
+  isVerified?: boolean // 是否已验证
+  ownerId?: string // 域名所有者ID
   providerId?: string // 域名所属的API提供商ID
   providerName?: string // 提供商名称，用于显示
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface Account {

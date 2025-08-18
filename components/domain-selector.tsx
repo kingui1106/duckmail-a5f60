@@ -216,7 +216,7 @@ export function DomainSelector({ value, onSelectionChange, currentLocale, isDisa
                 </span>
               </div>
               <div className="flex items-center gap-1">
-                {domain.isPrivate && (
+                {(domain.isPrivate || (!domain.isPublic && domain.isPublic !== undefined)) && (
                   <div className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 rounded-full text-xs font-medium">
                     {isZh ? "私有" : "Private"}
                   </div>

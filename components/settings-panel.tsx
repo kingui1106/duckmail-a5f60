@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Modal,
   ModalContent,
@@ -31,13 +31,15 @@ export function SettingsPanel({ isOpen, onClose, currentLocale }: SettingsPanelP
     removeCustomProvider,
     updateCustomProvider,
     toggleProviderEnabled,
-    isProviderEnabled
+    isProviderEnabled,
+    apiKey,
+    setApiKey
   } = useApiProvider()
   const { toast } = useHeroUIToast()
 
   const [showCustomForm, setShowCustomForm] = useState(false)
   const [editingProvider, setEditingProvider] = useState<CustomApiProvider | null>(null)
-  
+
   // 自定义提供商表单状态
   const [customForm, setCustomForm] = useState({
     id: "",
@@ -46,7 +48,15 @@ export function SettingsPanel({ isOpen, onClose, currentLocale }: SettingsPanelP
     mercureUrl: "",
   })
 
+  // API Key 表单状态
+  const [apiKeyInput, setApiKeyInput] = useState(apiKey)
+
   const isZh = currentLocale !== "en"
+
+  // 同步 API Key 变化
+  useEffect(() => {
+    setApiKeyInput(apiKey)
+  }, [apiKey])
 
   const resetCustomForm = () => {
     setCustomForm({
@@ -133,11 +143,63 @@ export function SettingsPanel({ isOpen, onClose, currentLocale }: SettingsPanelP
     })
   }
 
+  const handleSaveApiKey = () => {
+    console.log(`🔑 [Settings] Saving API Key: ${apiKeyInput ? `${apiKeyInput.substring(0, 10)}...` : 'null'}`)
+
+    // 验证API Key格式
+    if (apiKeyInput && !apiKeyInput.startsWith('dk_') && !apiKeyInput.startsWith('Bearer ')) {
+      toast({
+        title: isZh ? "API Key 格式可能不正确，应以 'dk_' 开头" : "API Key format may be incorrect, should start with 'dk_'",
+        color: "warning",
+        variant: "flat",
+      })
+    }
+
+    setApiKey(apiKeyInput)
+    toast({
+      title: isZh ? "API Key 已保存" : "API Key Saved",
+      color: "success",
+      variant: "flat",
+    })
+  }
+
+  const handleTestApiKey = async () => {
+    const currentApiKey = localStorage.getItem("api-key")
+    console.log(`🔑 [Settings] Current stored API Key: ${currentApiKey ? `${currentApiKey.substring(0, 10)}...` : 'null'}`)
+
+    // 测试API Key是否正确发送
+    if (currentApiKey) {
+      try {
+        const { fetchDomainsFromProvider } = await import("@/lib/api")
+        console.log(`🔑 [Settings] Testing API Key with domains request...`)
+        await fetchDomainsFromProvider("duckmail")
+        toast({
+          title: isZh ? "API Key 测试完成，请查看控制台日志" : "API Key test completed, check console logs",
+          color: "success",
+          variant: "flat",
+        })
+      } catch (error) {
+        console.error(`🔑 [Settings] API Key test failed:`, error)
+        toast({
+          title: isZh ? "API Key 测试失败" : "API Key test failed",
+          color: "danger",
+          variant: "flat",
+        })
+      }
+    } else {
+      toast({
+        title: isZh ? "未设置 API Key" : "No API Key set",
+        color: "warning",
+        variant: "flat",
+      })
+    }
+  }
+
   return (
-    <Modal 
-      isOpen={isOpen} 
+    <Modal
+      isOpen={isOpen}
       onClose={onClose}
-      size="2xl"
+      size="3xl"
       scrollBehavior="inside"
     >
       <ModalContent>
@@ -207,6 +269,43 @@ export function SettingsPanel({ isOpen, onClose, currentLocale }: SettingsPanelP
                     </CardBody>
                   </Card>
                 ))}
+              </div>
+            </div>
+
+            <Divider />
+
+            {/* API Key 设置 */}
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-700">
+              <h3 className="text-lg font-semibold mb-3">
+                {isZh ? "API Key 设置" : "API Key Settings"}
+              </h3>
+              <div className="space-y-3">
+                <Input
+                  label={isZh ? "API Key (可选)" : "API Key (Optional)"}
+                  placeholder={isZh ? "输入您的 API Key" : "Enter your API Key"}
+                  description={isZh ? `提供 API Key 可获得更多域名选择和私有域名创建权限。当前Context中的API Key: ${apiKey ? `${apiKey.substring(0, 10)}...` : '未设置'}` : `Providing an API Key gives you access to more domain choices and private domain creation permissions. Current Context API Key: ${apiKey ? `${apiKey.substring(0, 10)}...` : 'Not set'}`}
+                  value={apiKeyInput}
+                  onValueChange={setApiKeyInput}
+                  type="password"
+                  variant="bordered"
+                />
+                <div className="flex justify-end gap-2">
+                  <Button
+                    size="sm"
+                    color="secondary"
+                    variant="flat"
+                    onPress={handleTestApiKey}
+                  >
+                    {isZh ? "测试" : "Test"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    color="primary"
+                    onPress={handleSaveApiKey}
+                  >
+                    {isZh ? "保存" : "Save"}
+                  </Button>
+                </div>
               </div>
             </div>
 

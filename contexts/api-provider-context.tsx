@@ -31,6 +31,8 @@ interface ApiProviderContextType {
   toggleProviderEnabled: (providerId: string) => void
   isProviderEnabled: (providerId: string) => boolean
   getProviderById: (providerId: string) => ApiProvider | undefined
+  apiKey: string
+  setApiKey: (apiKey: string) => void
 }
 
 const ApiProviderContext = createContext<ApiProviderContextType | undefined>(undefined)
@@ -42,6 +44,7 @@ interface ApiProviderProviderProps {
 export function ApiProviderProvider({ children }: ApiProviderProviderProps) {
   const [customProviders, setCustomProviders] = useState<CustomApiProvider[]>([])
   const [disabledProviderIds, setDisabledProviderIds] = useState<string[]>([])
+  const [apiKey, setApiKeyState] = useState<string>("")
 
   // 所有提供商（预设 + 自定义）
   const providers = [...PRESET_PROVIDERS, ...customProviders]
@@ -53,9 +56,12 @@ export function ApiProviderProvider({ children }: ApiProviderProviderProps) {
 
   // 从localStorage加载设置
   useEffect(() => {
+    console.log(`🔑 [Context] Loading settings from localStorage...`)
     try {
       const savedCustomProviders = localStorage.getItem("custom-api-providers")
       const savedDisabledProviders = localStorage.getItem("disabled-api-providers")
+      const savedApiKey = localStorage.getItem("api-key")
+      console.log(`🔑 [Context] Raw API Key from localStorage: ${savedApiKey}`)
 
       if (savedCustomProviders) {
         const parsed = JSON.parse(savedCustomProviders)
@@ -69,6 +75,13 @@ export function ApiProviderProvider({ children }: ApiProviderProviderProps) {
         if (Array.isArray(parsed)) {
           setDisabledProviderIds(parsed)
         }
+      }
+
+      if (savedApiKey) {
+        console.log(`🔑 [Context] Loading API Key from localStorage: ${savedApiKey.substring(0, 10)}...`)
+        setApiKeyState(savedApiKey)
+      } else {
+        console.log(`🔑 [Context] No API Key found in localStorage`)
       }
     } catch (error) {
       console.error("Error loading API provider settings:", error)
@@ -120,6 +133,13 @@ export function ApiProviderProvider({ children }: ApiProviderProviderProps) {
     return providers.find(p => p.id === providerId)
   }
 
+  // 设置API Key
+  const setApiKey = (newApiKey: string) => {
+    console.log(`🔑 [Context] Setting API Key: ${newApiKey ? `${newApiKey.substring(0, 10)}...` : 'null'}`)
+    setApiKeyState(newApiKey)
+    localStorage.setItem("api-key", newApiKey)
+  }
+
   const value: ApiProviderContextType = {
     providers,
     enabledProviders,
@@ -130,6 +150,8 @@ export function ApiProviderProvider({ children }: ApiProviderProviderProps) {
     toggleProviderEnabled,
     isProviderEnabled,
     getProviderById,
+    apiKey,
+    setApiKey,
   }
 
   return (

@@ -13,7 +13,7 @@ function getDefaultProviderConfig() {
 }
 
 // 创建带有提供商信息的请求头
-function createHeaders(additionalHeaders: HeadersInit = {}, providerId?: string): HeadersInit {
+function createHeaders(additionalHeaders: HeadersInit = {}, providerId?: string, apiKey?: string): HeadersInit {
   // 如果指定了providerId，使用指定的提供商，否则使用默认提供商
   const provider = providerId ? getProviderConfig(providerId) : getDefaultProviderConfig()
   const headers: Record<string, string> = {
@@ -24,7 +24,36 @@ function createHeaders(additionalHeaders: HeadersInit = {}, providerId?: string)
     headers["X-API-Provider-Base-URL"] = provider.baseUrl
   }
 
+  // 如果提供了 API Key，添加 Authorization 头
+  if (apiKey && apiKey.trim()) {
+    const trimmedApiKey = apiKey.trim()
+    console.log(`🔑 [API] Processing API Key: ${trimmedApiKey.substring(0, 10)}..., length: ${trimmedApiKey.length}`)
+
+    // 根据后端API文档，支持 Bearer 格式和直接格式
+    if (trimmedApiKey.startsWith('Bearer ')) {
+      headers["Authorization"] = trimmedApiKey
+      console.log(`🔑 [API] Using Bearer format as-is`)
+    } else if (trimmedApiKey.startsWith('dk_')) {
+      headers["Authorization"] = `Bearer ${trimmedApiKey}`
+      console.log(`🔑 [API] Adding Bearer prefix to dk_ key`)
+    } else {
+      headers["Authorization"] = `Bearer ${trimmedApiKey}`
+      console.log(`🔑 [API] Adding Bearer prefix to unknown format key`)
+    }
+    console.log(`🔑 [API] Final Authorization header: ${headers["Authorization"].substring(0, 25)}...`)
+  } else {
+    console.log(`🔑 [API] No API Key provided, skipping Authorization header`)
+  }
+
   return headers
+}
+
+// 获取当前存储的 API Key
+function getApiKey(): string {
+  if (typeof window === "undefined") return ""
+  const apiKey = localStorage.getItem("api-key") || ""
+  console.log(`🔑 [API] getApiKey called, found: ${apiKey ? `${apiKey.substring(0, 10)}...` : 'null'}`)
+  return apiKey
 }
 
 // 从邮箱地址推断提供商ID
@@ -192,12 +221,26 @@ async function retryFetch(fn: () => Promise<any>, retries = 3, delay = 1000): Pr
 // 获取单个提供商的域名
 export async function fetchDomainsFromProvider(providerId: string): Promise<Domain[]> {
   try {
+    const apiKey = getApiKey()
+    console.log(`🔑 [API] fetchDomainsFromProvider - providerId: ${providerId}, apiKey: ${apiKey ? `${apiKey.substring(0, 10)}...` : 'null'}`)
+
+    const headers = createHeaders({
+      "Cache-Control": "no-cache",
+    }, providerId, apiKey)
+
+    console.log(`📤 [API] Request headers:`, headers)
+
     const response = await retryFetch(async () => {
-      const res = await fetch(`${API_BASE_URL}?endpoint=/domains`, {
-        headers: createHeaders({
-          "Cache-Control": "no-cache",
-        }, providerId),
+      const url = `${API_BASE_URL}?endpoint=/domains`
+      console.log(`📤 [API] Making request to: ${url}`)
+      console.log(`📤 [API] Request headers:`, JSON.stringify(headers, null, 2))
+
+      const res = await fetch(url, {
+        headers,
       })
+
+      console.log(`📥 [API] Response status: ${res.status}`)
+      console.log(`📥 [API] Response headers:`, Object.fromEntries(res.headers.entries()))
 
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}: ${res.statusText}`)
@@ -209,11 +252,50 @@ export async function fetchDomainsFromProvider(providerId: string): Promise<Doma
     const data = await response.json()
 
     if (data && data["hydra:member"] && Array.isArray(data["hydra:member"])) {
-      // 为每个域名添加提供商信息
-      return data["hydra:member"].map((domain: Domain) => ({
-        ...domain,
-        providerId, // 添加提供商ID
-      }))
+      // 只对 DuckMail 提供商进行域名过滤，其他提供商直接返回所有域名
+      let availableDomains = data["hydra:member"]
+
+      if (providerId === "duckmail") {
+        // DuckMail 提供商：过滤可用的域名，只显示已验证的域名
+        availableDomains = data["hydra:member"].filter((domain: any) => {
+          // 必须已验证才能使用
+          if (!domain.isVerified) {
+            console.log(`🚫 [API] [DuckMail] Filtering out unverified domain: ${domain.domainName}`)
+            return false
+          }
+
+          // 必须是活跃状态
+          if (!domain.isActive) {
+            console.log(`🚫 [API] [DuckMail] Filtering out inactive domain: ${domain.domainName}`)
+            return false
+          }
+
+          console.log(`✅ [API] [DuckMail] Including available domain: ${domain.domainName} (public: ${domain.isPublic}, verified: ${domain.isVerified})`)
+          return true
+        })
+      } else {
+        // 其他提供商：不进行过滤，直接使用所有域名
+        console.log(`✅ [API] [${providerId}] Using all domains without filtering (${availableDomains.length} domains)`)
+      }
+
+      // 为每个域名添加提供商信息，并标准化字段名
+      return availableDomains.map((domain: any) => {
+        const standardizedDomain: any = {
+          ...domain,
+          providerId, // 添加提供商ID
+        }
+
+        // 只对 DuckMail 提供商进行字段标准化
+        if (providerId === "duckmail") {
+          standardizedDomain.domain = domain.domainName || domain.domain // 标准化域名字段
+          standardizedDomain.isPrivate = domain.isPrivate || (!domain.isPublic && domain.isPublic !== undefined) // 标准化私有字段
+        } else {
+          // 其他提供商保持原有字段结构
+          standardizedDomain.domain = domain.domain || domain.domainName
+        }
+
+        return standardizedDomain
+      })
     } else {
       console.error("Invalid domains data format:", data)
       return []
@@ -281,11 +363,12 @@ export async function createAccount(address: string, password: string, providerI
   console.log(`🔧 [API] Creating account ${address} with provider: ${providerId}`)
 
   try {
+    const apiKey = getApiKey()
     const res = await fetch(`${API_BASE_URL}?endpoint=/accounts`, {
       method: "POST",
       headers: createHeaders({
         "Content-Type": "application/json",
-      }, providerId),
+      }, providerId, apiKey),
       body: JSON.stringify({ address, password }),
     })
 
@@ -317,12 +400,13 @@ export async function createAccount(address: string, password: string, providerI
     }
 
     // 对于其他错误，使用重试逻辑
+    const apiKey = getApiKey()
     const response = await retryFetch(async () => {
       const res = await fetch(`${API_BASE_URL}?endpoint=/accounts`, {
         method: "POST",
         headers: createHeaders({
           "Content-Type": "application/json",
-        }, providerId),
+        }, providerId, apiKey),
         body: JSON.stringify({ address, password }),
       })
 
