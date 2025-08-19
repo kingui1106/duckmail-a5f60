@@ -45,7 +45,7 @@
 
 点击下面的按钮，一键部署到 Netlify：
 
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/syferie/duckmail)
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/moonwesif/duckmail)
 
 > 🎉 **零配置部署** - 点击按钮后，Netlify 会自动 fork 项目到你的 GitHub 账户并开始部署，无需任何额外配置！
 
@@ -104,13 +104,8 @@ pnpm start
 
 ## 🛠️ 技术栈
 
-- **前端框架**: Next.js 15
-- **UI 组件库**: HeroUI
-- **样式**: Tailwind CSS
-- **图标**: Lucide React
 - **API**: Mail.tm REST API / DuckMail API
 - **实时通信**: Mercure SSE
-- **语言**: TypeScript
 
 ## 🌐 部署说明
 
@@ -150,11 +145,21 @@ pnpm start
 2. 在 "API Key 设置" 区域输入您的 API Key
 3. 点击保存即可生效
 
+#### API Key 获取方式
+1. 访问 https://domain.duckmail.sbs
+2. LinuxDo 鉴权登录
+3. 点击左侧栏 API Key 选项，新建 API key
+
 ### API 限制
 
 - 请求频率限制: 8 QPS
-- 邮箱有效期: 根据 Mail.tm 政策
+- 邮箱有效期: 邮件均保存两天，之后自动删除。账号不会删除，仍可以通过相同的信息登录接码
 - 无密码找回功能
+
+#### 关于鉴权
+
+1. 所有接口无需API Key均可使用，创建邮箱时会获取邮箱的 Token 用于邮箱相关操作的鉴权
+2. Domains 与 accounts 接口支持额外传入API Key Header以进行鉴权，传入 API Key 后，可获取该 API Key 下的私有域名，同时使用私有域名创建新的邮箱账户，其他操作均相同。
 
 ## 🤝 贡献
 
