@@ -47,7 +47,7 @@
 
 Click the button below to deploy to Netlify with one click:
 
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/syferie/duckmail)
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/moonwesif/duckmail)
 
 > 🎉 **Zero Configuration Deployment** - After clicking the button, Netlify will automatically fork the project to your GitHub account and start deployment, no additional configuration required!
 
@@ -55,7 +55,7 @@ Click the button below to deploy to Netlify with one click:
 
 Click the button below to deploy to Vercel with one click:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/syferie/duckmail)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/moonwesif/duckmail)
 
 > ⚠️ **Note**: Vercel deployment only supports DuckMail API, not Mail.tm API (because Mail.tm blocks Vercel's IP addresses). Please disable the Mail.tm provider in settings after deployment.
 >
@@ -72,7 +72,7 @@ Click the button below to deploy to Vercel with one click:
 
 ```bash
 # Clone the repository
-git clone https://github.com/syferie/duckmail.git
+git clone https://github.com/moonwesif/duckmail.git
 cd duckmail
 
 # Install dependencies
@@ -171,7 +171,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 If you have any questions or suggestions, please contact us through:
 
-- Create an [Issue](https://github.com/syferie/duckmail/issues)
+- Create an [Issue](https://github.com/moonwesif/duckmail/issues)
 - Send email to: syferie@proton.me
 
 ## 💖 Sponsor

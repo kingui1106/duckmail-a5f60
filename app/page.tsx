@@ -128,7 +128,7 @@ function MainContent() {
 
     if (item === "github" || item === "faq") {
       // 跳转到GitHub仓库（FAQ也跳转到GitHub）
-      window.open("https://github.com/Syferie/DuckMail", "_blank", "noopener,noreferrer")
+      window.open("https://github.com/moonwesif/DuckMail", "_blank", "noopener,noreferrer")
       return
     }
 
