@@ -52,8 +52,10 @@ const content = {
     authDescription:
       "大部分端点需要通过 Bearer Token 进行认证。您可以通过提供地址和密码来获取 Token。",
     apiKey: "API 密钥 (可选)",
-    apiKeyDescription:
-      "部分接口 (获取域名、创建账户) 支持可选的 API 密钥，用于获取私有域名或在私有域名下创建邮箱。密钥以 `dk_` 开头。",
+    apiKeyDescription_pre:
+      "部分接口 (获取域名、创建账户) 支持可选的 API 密钥，用于获取私有域名或在私有域名下创建邮箱。密钥以 `dk_` 开头。您可以访问 ",
+    apiKeyDescription_link: "https://domain.duckmail.sbs",
+    apiKeyDescription_post: " 获取您的 API 密钥。",
     endpoints: "API 端点",
     errorHandling: "错误处理",
     contributions: "贡献",
@@ -92,8 +94,10 @@ const content = {
     authDescription:
       "Most endpoints require authentication via a Bearer Token. You can obtain a token by providing an address and password.",
     apiKey: "API Key (Optional)",
-    apiKeyDescription:
-      "Some endpoints (getting domains, creating accounts) support an optional API Key to get private domains or create accounts under them. The key starts with `dk_`.",
+    apiKeyDescription_pre:
+      "Some endpoints (getting domains, creating accounts) support an optional API Key to get private domains or create accounts under them. The key starts with `dk_`. You can obtain your API Key from ",
+    apiKeyDescription_link: "https://domain.duckmail.sbs",
+    apiKeyDescription_post: ".",
     endpoints: "API Endpoints",
     errorHandling: "Error Handling",
     contributions: "Contributions",
@@ -506,7 +510,18 @@ export default function ApiDocsPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-lg">{currentContent.apiKey}</h3>
-                <p className="text-default-600">{currentContent.apiKeyDescription}</p>
+                <p className="text-default-600">
+                  {currentContent.apiKeyDescription_pre}
+                  <a
+                    href={currentContent.apiKeyDescription_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline"
+                  >
+                    {currentContent.apiKeyDescription_link}
+                  </a>
+                  {currentContent.apiKeyDescription_post}
+                </p>
               </div>
             </CardBody>
           </Card>
@@ -547,7 +562,7 @@ export default function ApiDocsPage() {
               <div className="flex gap-3">
                 <Button
                   as="a"
-                  href="https://github.com/moonwesif/DuckMail"
+                  href="https://github.com/Syferie/DuckMail"
                   target="_blank"
                   rel="noopener noreferrer"
                   color="primary"
