@@ -3,12 +3,12 @@
 import { Button } from "@heroui/button"
 
 interface EmptyStateProps {
-  onCreateAccount: () => void
+  onLogin: () => void
   isAuthenticated: boolean
   currentLocale: string
 }
 
-export default function EmptyState({ onCreateAccount, isAuthenticated, currentLocale }: EmptyStateProps) {
+export default function EmptyState({ onLogin, isAuthenticated, currentLocale }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center h-full py-12">
       <div className="mb-8">
@@ -47,8 +47,8 @@ export default function EmptyState({ onCreateAccount, isAuthenticated, currentLo
       </p>
 
       {!isAuthenticated && (
-        <Button color="primary" size="lg" className="px-8 py-6 text-lg font-medium" onPress={onCreateAccount}>
-          {currentLocale === "en" ? "Use Now" : "立即使用"}
+        <Button color="primary" size="lg" className="px-8 py-6 text-lg font-medium" onPress={onLogin}>
+          {currentLocale === "en" ? "Login Now" : "立即登录"}
         </Button>
       )}
     </div>

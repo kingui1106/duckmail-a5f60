@@ -4,7 +4,7 @@ import { Button } from "@heroui/button"
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSection } from "@heroui/dropdown"
 import { Avatar } from "@heroui/avatar"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Sun, Moon, Languages, User, UserPlus, LogOut, Trash2, Copy, Check, Wifi, Settings } from "lucide-react"
+import { Sun, Moon, Languages, User, LogOut, Trash2, Copy, Check, Wifi, Settings } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/contexts/auth-context"
@@ -14,14 +14,13 @@ import { useSmartMailChecker } from "@/hooks/use-smart-mail-checker"
 import { SettingsPanel } from "@/components/settings-panel"
 
 interface HeaderProps {
-  onCreateAccount: () => void
   currentLocale: string
   onLocaleChange: (locale: string) => void
   onLogin?: () => void
   isMobile?: boolean
 }
 
-export default function Header({ onCreateAccount, currentLocale, onLocaleChange, onLogin, isMobile = false }: HeaderProps) {
+export default function Header({ currentLocale, onLocaleChange, onLogin, isMobile = false }: HeaderProps) {
   const { theme, setTheme } = useTheme()
   const { isAuthenticated, currentAccount, accounts, logout, switchAccount, deleteAccount } = useAuth()
   const [mounted, setMounted] = useState(false)
@@ -262,7 +261,7 @@ export default function Header({ onCreateAccount, currentLocale, onLocaleChange,
             </Button>
           </DropdownTrigger>
           <DropdownMenu aria-label="User actions">
-            {[
+              {[
               ...(isAuthenticated && currentAccount ? [
                 <DropdownSection key="current-account" title={currentLocale === "en" ? "Current Account" : "当前账户"} showDivider>
                   <DropdownItem
@@ -366,9 +365,6 @@ export default function Header({ onCreateAccount, currentLocale, onLocaleChange,
                     <DropdownItem key="login_another" startContent={<User size={16} />} onPress={onLogin || (() => {})}>
                       {currentLocale === "en" ? "Login Another Account" : "登录其他账户"}
                     </DropdownItem>
-                    <DropdownItem key="create_another" startContent={<UserPlus size={16} />} onPress={onCreateAccount}>
-                      {currentLocale === "en" ? "Create New Account" : "创建新账户"}
-                    </DropdownItem>
                     <DropdownItem
                       key="delete"
                       className="text-danger"
@@ -383,9 +379,6 @@ export default function Header({ onCreateAccount, currentLocale, onLocaleChange,
                   <>
                     <DropdownItem key="login" startContent={<User size={16} />} onPress={onLogin || (() => {})}>
                       {currentLocale === "en" ? "Login Existing Account" : "登录现有账户"}
-                    </DropdownItem>
-                    <DropdownItem key="create" startContent={<UserPlus size={16} />} onPress={onCreateAccount}>
-                      {currentLocale === "en" ? "Create New Account" : "创建新账户"}
                     </DropdownItem>
                   </>
                 )}

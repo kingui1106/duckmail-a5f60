@@ -6,7 +6,6 @@ import Header from "@/components/header"
 import Sidebar from "@/components/sidebar"
 import EmptyState from "@/components/empty-state"
 import FeatureCards from "@/components/feature-cards"
-import AccountModal from "@/components/account-modal"
 import LoginModal from "@/components/login-modal"
 import MessageList from "@/components/message-list"
 import MessageDetail from "@/components/message-detail"
@@ -19,7 +18,6 @@ import { Languages, CheckCircle, Navigation, RefreshCw, Menu } from "lucide-reac
 import { Button } from "@heroui/button"
 
 function MainContent() {
-  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [loginAccountAddress, setLoginAccountAddress] = useState<string>("")
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null)
@@ -69,16 +67,8 @@ function MainContent() {
     })
   }
 
-  const handleCreateAccount = () => {
-    setIsAccountModalOpen(true)
-  }
-
   const handleLogin = () => {
     setIsLoginModalOpen(true)
-  }
-
-  const handleCloseModal = () => {
-    setIsAccountModalOpen(false)
   }
 
   const handleCloseLoginModal = () => {
@@ -191,7 +181,6 @@ function MainContent() {
           )}
 
           <Header
-            onCreateAccount={handleCreateAccount}
             onLogin={handleLogin}
             currentLocale={currentLocale}
             onLocaleChange={handleLocaleChange}
@@ -211,7 +200,7 @@ function MainContent() {
                     <MessageList onSelectMessage={handleSelectMessage} currentLocale={currentLocale} refreshKey={refreshKey} />
                   )
                 ) : (
-                  <EmptyState onCreateAccount={handleCreateAccount} isAuthenticated={isAuthenticated} currentLocale={currentLocale} />
+                  <EmptyState onLogin={handleLogin} isAuthenticated={isAuthenticated} currentLocale={currentLocale} />
                 )}
               </div>
               {(!isAuthenticated || !currentAccount) && <FeatureCards currentLocale={currentLocale} />}
@@ -264,7 +253,6 @@ function MainContent() {
         )}
       </div>
 
-      <AccountModal isOpen={isAccountModalOpen} onClose={handleCloseModal} currentLocale={currentLocale} />
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={handleCloseLoginModal}
