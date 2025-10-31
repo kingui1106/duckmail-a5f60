@@ -2,7 +2,7 @@
 
 import { Button } from "@heroui/button"
 import { Card } from "@heroui/card"
-import { Mail, RefreshCw, Code, HelpCircle, MessageSquare, ExternalLink } from "lucide-react"
+import { Mail, RefreshCw } from "lucide-react"
 
 interface SidebarProps {
   activeItem: string
@@ -22,29 +22,6 @@ export default function Sidebar({ activeItem, onItemClick, currentLocale, isMobi
       id: "refresh",
       label: currentLocale === "en" ? "Refresh" : "刷新",
       icon: RefreshCw
-    },
-  ]
-
-  const bottomItems = [
-    {
-      id: "api",
-      label: currentLocale === "en" ? "API" : "API 文档",
-      icon: Code
-    },
-    {
-      id: "faq",
-      label: currentLocale === "en" ? "FAQ" : "常见问题",
-      icon: HelpCircle
-    },
-    {
-      id: "privacy",
-      label: currentLocale === "en" ? "Privacy" : "隐私政策",
-      icon: MessageSquare
-    },
-    {
-      id: "github",
-      label: "GitHub",
-      icon: ExternalLink
     },
   ]
 
@@ -81,26 +58,6 @@ export default function Sidebar({ activeItem, onItemClick, currentLocale, isMobi
             </Button>
           )
         })}
-      </div>
-
-      <div className="p-4 space-y-2 border-t border-gray-200 dark:border-gray-800">
-        {bottomItems.map((item) => {
-          const Icon = item.icon
-          return (
-            <Button
-              key={item.id}
-              variant="light"
-              size="md"
-              className="w-full justify-start h-10 text-sm text-gray-600 dark:text-gray-300"
-              startContent={<Icon size={16} />}
-              onPress={() => onItemClick(item.id)}
-            >
-              {item.label}
-            </Button>
-          )
-        })}
-
-        <div className="text-xs text-gray-400 mt-4 pt-2 border-t border-gray-200 dark:border-gray-700">© duckmail.sbs</div>
       </div>
     </Card>
   )

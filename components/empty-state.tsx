@@ -47,9 +47,16 @@ export default function EmptyState({ onLogin, isAuthenticated, currentLocale }: 
       </p>
 
       {!isAuthenticated && (
-        <Button color="primary" size="lg" className="px-8 py-6 text-lg font-medium" onPress={onLogin}>
-          {currentLocale === "en" ? "Login Now" : "立即登录"}
-        </Button>
+        <div className="flex justify-center w-full">
+          <Button 
+            color="primary" 
+            size="lg" 
+            className="px-16 py-8 text-2xl font-bold shadow-lg hover:shadow-xl transition-all" 
+            onPress={onLogin}
+          >
+            {currentLocale === "en" ? "Login Now" : "立即登录"}
+          </Button>
+        </div>
       )}
     </div>
   )
